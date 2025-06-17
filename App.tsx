@@ -1,11 +1,22 @@
 import "./global.css"
-import { View } from "react-native";
 import Landing from "./src/Pages/Landing";
+import {NavigationContainer} from '@react-navigation/native';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import Signup from "./src/Pages/Signup";
+
+const Stack = createNativeStackNavigator();
  
 export default function App() {
   return (
-    <View className="flex-1 items-center justify-center bg-white">
-      <Landing />
-    </View>
+    <NavigationContainer>
+      <Stack.Navigator>
+        <Stack.Screen
+          name="Landing"
+          component={Landing}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen name="Signup" component={Signup}  options={{headerShown: false}}/>
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }

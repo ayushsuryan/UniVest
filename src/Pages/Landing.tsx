@@ -2,9 +2,10 @@ import React from 'react';
 import { View, Text, Image, ImageBackground } from 'react-native';
 import CustomButton from '../Components/Button';
 
-const Landing: React.FC = () => {
+const Landing = ({ navigation }: { navigation: any }) => {
   const handleGetStarted = (): void => {
     console.log('Get Started pressed');
+    navigation.navigate('Signup');
   };
 
   return (
