@@ -44,10 +44,7 @@ const Landing: React.FC<LandingProps> = ({ navigation }) => {
         useNativeDriver: true,
       }),
     ]).start();
-
   }, []);
-
-
 
   const FeatureCard = ({ icon, title, description, index }: any) => {
     const cardAnim = useRef(new Animated.Value(0)).current;
