@@ -1,244 +1,457 @@
 import React, {useState} from 'react';
-import {View, Text, ScrollView, TouchableOpacity} from 'react-native';
+import {View, Text, ScrollView, TouchableOpacity, Image} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import CustomButton from '../../Components/CustomButton';
+import FeatherIcon from 'react-native-vector-icons/Feather';
 
-interface MiningAsset {
+interface MyInvestment {
   id: string;
-  name: string;
-  symbol: string;
-  status: 'active' | 'paused' | 'stopped';
-  dailyEarnings: number;
-  totalEarnings: number;
-  hashRate: string;
-  startDate: string;
+  commodity: string;
+  category: string;
+  invested: number;
+  currentValue: number;
+  hourlyReturn: number;
+  totalReturns: number;
+  status: 'active' | 'matured' | 'pending';
+  daysLeft: number;
+  investedDate: string;
+  image: string;
 }
 
 const MyAssets: React.FC = () => {
-  const [selectedTab, setSelectedTab] = useState('active');
-  
-  const myAssets: MiningAsset[] = [
+  const [selectedTab, setSelectedTab] = useState('all');
+  const [portfolioValue] = useState(187500);
+  const [totalInvested] = useState(150000);
+  const [totalReturns] = useState(37500);
+  const [activeInvestments] = useState(5);
+  const [referralBalance] = useState(2500);
+  const [referredUsers] = useState(5);
+
+  const myInvestments: MyInvestment[] = [
     {
       id: '1',
-      name: 'Bitcoin Mining',
-      symbol: 'BTC',
+      commodity: 'Phone Chargers',
+      category: 'Electronics',
+      invested: 25000,
+      currentValue: 29200,
+      hourlyReturn: 0.8,
+      totalReturns: 4200,
       status: 'active',
-      dailyEarnings: 25.67,
-      totalEarnings: 567.89,
-      hashRate: '95.2 TH/s',
-      startDate: '2024-01-15',
+      daysLeft: 18,
+      investedDate: '2024-01-15',
+      image: 'https://picsum.photos/200/200?random=11',
     },
     {
       id: '2',
-      name: 'Ethereum Mining',
-      symbol: 'ETH',
+      commodity: 'Bluetooth Earbuds',
+      category: 'Electronics',
+      invested: 35000,
+      currentValue: 42800,
+      hourlyReturn: 1.2,
+      totalReturns: 7800,
       status: 'active',
-      dailyEarnings: 18.45,
-      totalEarnings: 234.56,
-      hashRate: '2.5 GH/s',
-      startDate: '2024-02-01',
+      daysLeft: 25,
+      investedDate: '2024-01-10',
+      image: 'https://picsum.photos/200/200?random=12',
     },
     {
       id: '3',
-      name: 'Litecoin Mining',
-      symbol: 'LTC',
-      status: 'paused',
-      dailyEarnings: 0,
-      totalEarnings: 89.32,
-      hashRate: '15.2 MH/s',
-      startDate: '2024-01-20',
+      commodity: 'Smart Watches',
+      category: 'Wearables',
+      invested: 20000,
+      currentValue: 23600,
+      hourlyReturn: 0.9,
+      totalReturns: 3600,
+      status: 'active',
+      daysLeft: 12,
+      investedDate: '2024-01-20',
+      image: 'https://picsum.photos/200/200?random=13',
+    },
+    {
+      id: '4',
+      commodity: 'Gaming Laptops',
+      category: 'Electronics',
+      invested: 45000,
+      currentValue: 47800,
+      hourlyReturn: 1.5,
+      totalReturns: 2800,
+      status: 'matured',
+      daysLeft: 0,
+      investedDate: '2023-12-01',
+      image: 'https://picsum.photos/200/200?random=14',
+    },
+    {
+      id: '5',
+      commodity: 'Wireless Mice',
+      category: 'Accessories',
+      invested: 25000,
+      currentValue: 25900,
+      hourlyReturn: 0.4,
+      totalReturns: 900,
+      status: 'pending',
+      daysLeft: 30,
+      investedDate: '2024-01-25',
+      image: 'https://picsum.photos/200/200?random=15',
     },
   ];
 
   const tabs = [
-    {key: 'active', label: 'Active', count: myAssets.filter(a => a.status === 'active').length},
-    {key: 'paused', label: 'Paused', count: myAssets.filter(a => a.status === 'paused').length},
-    {key: 'all', label: 'All', count: myAssets.length},
+    {key: 'all', label: 'All Investments'},
+    {key: 'active', label: 'Active'},
+    {key: 'matured', label: 'Matured'},
+    {key: 'pending', label: 'Pending'},
   ];
 
-  const filteredAssets = myAssets.filter(asset => {
+  const filteredInvestments = myInvestments.filter(investment => {
     if (selectedTab === 'all') return true;
-    return asset.status === selectedTab;
+    return investment.status === selectedTab;
   });
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-500';
-      case 'paused': return 'bg-yellow-500';
-      case 'stopped': return 'bg-red-500';
-      default: return 'bg-gray-500';
+      case 'active': return '#10b981';
+      case 'matured': return '#059669';
+      case 'pending': return '#f59e0b';
+      default: return '#6b7280';
     }
   };
 
-  const getStatusTextColor = (status: string) => {
+  const getStatusBg = (status: string) => {
     switch (status) {
-      case 'active': return 'text-green-600';
-      case 'paused': return 'text-yellow-600';
-      case 'stopped': return 'text-red-600';
-      default: return 'text-gray-600';
+      case 'active': return 'rgba(16, 185, 129, 0.1)';
+      case 'matured': return 'rgba(5, 150, 105, 0.1)';
+      case 'pending': return 'rgba(245, 158, 11, 0.1)';
+      default: return 'rgba(107, 114, 128, 0.1)';
     }
   };
 
-  const totalDailyEarnings = myAssets
-    .filter(asset => asset.status === 'active')
-    .reduce((sum, asset) => sum + asset.dailyEarnings, 0);
-
-  const totalEarnings = myAssets.reduce((sum, asset) => sum + asset.totalEarnings, 0);
+  const getReturnPercentage = (invested: number, returns: number) => {
+    return ((returns / invested) * 100).toFixed(1);
+  };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <View className="bg-white px-6 py-4 border-b border-gray-200">
-        <Text className="text-gray-900 text-2xl font-bold">
-          My Assets
-        </Text>
-        <Text className="text-gray-600 text-sm mt-1">
-          Manage your mining operations
-        </Text>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: '#f8fafc' }}>
+      {/* Decorative Background */}
+      <View className="absolute inset-0">
+        <View
+          className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-5"
+          style={{ backgroundColor: '#059669' }}
+        />
+        <View
+          className="absolute bottom-0 left-0 w-48 h-48 rounded-full opacity-5"
+          style={{ backgroundColor: '#10b981' }}
+        />
+        <View
+          className="absolute top-40 left-8 w-32 h-32 rounded-full opacity-5"
+          style={{ backgroundColor: '#34d399' }}
+        />
       </View>
 
-      {/* Summary Cards */}
-      <View className="bg-white px-6 py-4 border-b border-gray-200">
-        <View className="flex-row justify-between">
-          <View className="flex-1 mr-2">
-            <Text className="text-gray-500 text-sm">Daily Earnings</Text>
-            <Text className="text-green-600 text-xl font-bold">
-              ₹{totalDailyEarnings.toFixed(2)}
-            </Text>
-          </View>
-          <View className="flex-1 ml-2">
-            <Text className="text-gray-500 text-sm">Total Earnings</Text>
-            <Text className="text-blue-600 text-xl font-bold">
-              ₹{totalEarnings.toFixed(2)}
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Tabs */}
-      <View className="bg-white border-b border-gray-200">
-        <View className="flex-row px-6 py-4">
-          {tabs.map((tab) => (
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View className="px-6 py-8 mb-6">
+          <View className="flex-row items-center justify-between mb-6">
+            <View>
+              <Text className="text-gray-900 text-3xl font-black">
+                My Investments 💼
+              </Text>
+              <Text className="text-gray-600 text-base mt-1">
+                Track your commodity portfolio
+              </Text>
+            </View>
             <TouchableOpacity
-              key={tab.key}
-              onPress={() => setSelectedTab(tab.key)}
-              className={`flex-1 py-2 mx-1 rounded-lg ${
-                selectedTab === tab.key ? 'bg-blue-600' : 'bg-transparent'
-              }`}>
-              <Text className={`text-center font-medium ${
-                selectedTab === tab.key ? 'text-white' : 'text-gray-600'
-              }`}>
-                {tab.label} ({tab.count})
+              className="rounded-2xl p-3 bg-white shadow-sm border border-gray-100"
+              activeOpacity={0.8}
+            >
+              <FeatherIcon name="more-vertical" size={24} color="#059669" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Portfolio Summary Card */}
+          <View className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100 mb-6">
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-gray-600 text-base font-medium">Portfolio Value</Text>
+              <View className="flex-row items-center">
+                <FeatherIcon name="trending-up" size={16} color="#10b981" />
+                <Text className="text-green-600 text-sm font-bold ml-1">
+                  +{getReturnPercentage(totalInvested, totalReturns)}%
+                </Text>
+              </View>
+            </View>
+            <Text className="text-gray-900 text-4xl font-black mb-4">
+              ₹{portfolioValue.toLocaleString()}
+            </Text>
+            <View className="flex-row justify-between">
+              <View>
+                <Text className="text-gray-500 text-sm">Invested</Text>
+                <Text className="text-gray-900 text-xl font-black">₹{totalInvested.toLocaleString()}</Text>
+              </View>
+              <View>
+                <Text className="text-gray-500 text-sm">Returns</Text>
+                <Text className="text-green-600 text-xl font-black">+₹{totalReturns.toLocaleString()}</Text>
+              </View>
+              <View>
+                <Text className="text-gray-500 text-sm">Active</Text>
+                <Text className="text-gray-900 text-xl font-black">{activeInvestments}</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Referral Stats Card */}
+          <View className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-3xl p-6 shadow-lg mb-6">
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-black text-xl font-black">
+                Referral Rewards 
+              </Text>
+              <View 
+                className="w-12 h-12 rounded-2xl items-center justify-center"
+                style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+              >
+                <FeatherIcon name="users" size={24} color="black" />
+              </View>
+            </View>
+            <View className="flex-row justify-between">
+              <View>
+                <Text className="text-black text-sm">Referral Balance</Text>
+                <Text className="text-black text-2xl font-black">₹{referralBalance.toLocaleString()}</Text>
+              </View>
+              <View>
+                <Text className="text-black text-sm">Referred Users</Text>
+                <Text className="text-black text-2xl font-black">{referredUsers}</Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              className="bg-white rounded-2xl px-6 py-3 mt-4 self-start"
+              activeOpacity={0.8}
+            >
+              <Text className="text-emerald-600 text-base font-black">
+                Invite More Friends
               </Text>
             </TouchableOpacity>
-          ))}
+          </View>
         </View>
-      </View>
 
-      <ScrollView className="flex-1 px-6 py-4">
-        {filteredAssets.length === 0 ? (
-          <View className="bg-white rounded-xl p-8 items-center">
-            <Text className="text-6xl mb-4">⛏️</Text>
-            <Text className="text-gray-900 text-xl font-bold mb-2">
-              No {selectedTab === 'all' ? '' : selectedTab} assets
-            </Text>
-            <Text className="text-gray-600 text-center mb-6">
-              Start mining to see your assets here
-            </Text>
-            <CustomButton
-              title="Browse Assets"
-              onPress={() => {}}
-              variant="primary"
-            />
-          </View>
-        ) : (
-          <View className="space-y-4">
-            {filteredAssets.map((asset) => (
-              <View key={asset.id} className="bg-white rounded-xl p-4 shadow-sm">
-                <View className="flex-row justify-between items-start mb-3">
-                  <View className="flex-row items-center flex-1">
-                    <View className="w-12 h-12 bg-blue-600 rounded-full items-center justify-center mr-3">
-                      <Text className="text-white font-bold text-lg">
-                        {asset.symbol[0]}
-                      </Text>
-                    </View>
-                    <View className="flex-1">
-                      <Text className="text-gray-900 text-lg font-bold">
-                        {asset.name}
-                      </Text>
-                      <Text className="text-gray-500 text-sm">
-                        Started: {new Date(asset.startDate).toLocaleDateString()}
-                      </Text>
-                    </View>
-                  </View>
-                  <View className={`px-2 py-1 rounded-full ${getStatusColor(asset.status)}`}>
-                    <Text className="text-white text-xs font-medium capitalize">
-                      {asset.status}
-                    </Text>
-                  </View>
-                </View>
-
-                <View className="grid grid-cols-3 gap-4 mb-4">
-                  <View>
-                    <Text className="text-gray-500 text-sm">Daily Earnings</Text>
-                    <Text className="text-green-600 text-lg font-bold">
-                      ₹{asset.dailyEarnings.toFixed(2)}
-                    </Text>
-                  </View>
-                  <View>
-                    <Text className="text-gray-500 text-sm">Total Earned</Text>
-                    <Text className="text-blue-600 text-lg font-bold">
-                      ₹{asset.totalEarnings.toFixed(2)}
-                    </Text>
-                  </View>
-                  <View>
-                    <Text className="text-gray-500 text-sm">Hash Rate</Text>
-                    <Text className="text-gray-900 text-lg font-bold">
-                      {asset.hashRate}
-                    </Text>
-                  </View>
-                </View>
-
-                <View className="flex-row space-x-2">
-                  {asset.status === 'active' ? (
-                    <>
-                      <CustomButton
-                        title="Pause"
-                        onPress={() => {}}
-                        variant="secondary"
-                        size="sm"
-                        className="flex-1"
-                      />
-                      <CustomButton
-                        title="Details"
-                        onPress={() => {}}
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <CustomButton
-                        title="Resume"
-                        onPress={() => {}}
-                        variant="primary"
-                        size="sm"
-                        className="flex-1"
-                      />
-                      <CustomButton
-                        title="Stop"
-                        onPress={() => {}}
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                      />
-                    </>
-                  )}
-                </View>
-              </View>
+        {/* Tabs */}
+        <View className="px-6 mb-6">
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{paddingRight: 24}}
+          >
+            {tabs.map((tab) => (
+              <TouchableOpacity
+                key={tab.key}
+                onPress={() => setSelectedTab(tab.key)}
+                className={`mr-3 px-6 py-3 rounded-2xl ${
+                  selectedTab === tab.key
+                    ? 'bg-emerald-600 shadow-lg'
+                    : 'bg-white border border-gray-200'
+                }`}
+                style={{
+                  shadowColor: selectedTab === tab.key ? '#059669' : 'transparent',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 8,
+                  elevation: selectedTab === tab.key ? 8 : 2,
+                }}
+              >
+                <Text className={`font-bold ${
+                  selectedTab === tab.key
+                    ? 'text-white'
+                    : 'text-gray-700'
+                }`}>
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
             ))}
-          </View>
-        )}
+          </ScrollView>
+        </View>
+
+        {/* Investments Content */}
+        <View className="px-6 pb-24">
+          {filteredInvestments.length > 0 ? (
+            <View className="space-y-4">
+              {filteredInvestments.map((investment) => (
+                <View key={investment.id} className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100">
+                  <View className="flex-row justify-between items-start mb-4">
+                    <View className="flex-row items-center flex-1">
+                      <View 
+                        className="w-16 h-16 rounded-2xl mr-4 shadow-sm overflow-hidden"
+                        style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}
+                      >
+                        <Image
+                          source={{ uri: investment.image }}
+                          className="w-full h-full"
+                          style={{ borderRadius: 16 }}
+                        />
+                      </View>
+                      <View className="flex-1">
+                        <Text className="text-gray-900 text-xl font-black">
+                          {investment.commodity}
+                        </Text>
+                        <Text className="text-gray-500 text-base font-medium">
+                          {investment.category}
+                        </Text>
+                        <Text className="text-gray-400 text-sm mt-1">
+                          Invested on {new Date(investment.investedDate).toLocaleDateString()}
+                        </Text>
+                      </View>
+                    </View>
+                    <View 
+                      className="px-4 py-2 rounded-2xl border"
+                      style={{ 
+                        backgroundColor: getStatusBg(investment.status),
+                        borderColor: getStatusColor(investment.status)
+                      }}
+                    >
+                      <Text 
+                        className="text-sm font-bold capitalize"
+                        style={{ color: getStatusColor(investment.status) }}
+                      >
+                        {investment.status}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View className="flex-row justify-between items-center mb-4">
+                    <View className="flex-1">
+                      <Text className="text-gray-500 text-sm font-medium">Invested Amount</Text>
+                      <Text className="text-gray-900 text-xl font-black">
+                        ₹{investment.invested.toLocaleString()}
+                      </Text>
+                    </View>
+                    <View className="flex-1 items-center">
+                      <Text className="text-gray-500 text-sm font-medium">Current Value</Text>
+                      <Text className="text-gray-900 text-xl font-black">
+                        ₹{investment.currentValue.toLocaleString()}
+                      </Text>
+                    </View>
+                    <View className="flex-1 items-end">
+                      <Text className="text-gray-500 text-sm font-medium">Returns</Text>
+                      <Text className="text-green-600 text-xl font-black">
+                        +₹{investment.totalReturns.toLocaleString()}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View className="flex-row justify-between items-center mb-6">
+                    <View className="flex-row items-center">
+                      <FeatherIcon name="percent" size={16} color="#10b981" />
+                      <Text className="text-green-600 text-sm font-bold ml-2">
+                        {investment.hourlyReturn}%/hr
+                      </Text>
+                    </View>
+                    <View className="flex-row items-center">
+                      <FeatherIcon name="calendar" size={16} color="#6b7280" />
+                      <Text className="text-gray-500 text-sm ml-2">
+                        {investment.status === 'matured' 
+                          ? 'Completed' 
+                          : `${investment.daysLeft} days left`
+                        }
+                      </Text>
+                    </View>
+                    <View className="flex-row items-center">
+                      <Text className="text-green-600 text-sm font-bold">
+                        +{getReturnPercentage(investment.invested, investment.totalReturns)}%
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View className="flex-row space-x-3">
+                    {investment.status === 'matured' ? (
+                      <TouchableOpacity
+                        className="flex-1 rounded-2xl p-4 shadow-lg"
+                        style={{
+                          backgroundColor: '#059669',
+                          shadowColor: '#059669',
+                          shadowOffset: { width: 0, height: 8 },
+                          shadowOpacity: 0.3,
+                          shadowRadius: 20,
+                          elevation: 12,
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <View className="flex-row items-center justify-center">
+                          <FeatherIcon name="download" size={20} color="white" />
+                          <Text className="text-white text-lg font-black ml-2">
+                            Withdraw
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    ) : (
+                      <>
+                        <TouchableOpacity
+                          className="flex-1 rounded-2xl p-4 bg-gray-100 border border-gray-200"
+                          activeOpacity={0.8}
+                        >
+                          <View className="flex-row items-center justify-center">
+                            <FeatherIcon name="bar-chart-2" size={20} color="#374151" />
+                            <Text className="text-gray-700 text-lg font-black ml-2">
+                              Details
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          className="flex-1 rounded-2xl p-4 shadow-lg"
+                          style={{
+                            backgroundColor: '#059669',
+                            shadowColor: '#059669',
+                            shadowOffset: { width: 0, height: 8 },
+                            shadowOpacity: 0.3,
+                            shadowRadius: 20,
+                            elevation: 12,
+                          }}
+                          activeOpacity={0.8}
+                        >
+                          <View className="flex-row items-center justify-center">
+                            <FeatherIcon name="plus" size={20} color="white" />
+                            <Text className="text-white text-lg font-black ml-2">
+                              Add More
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      </>
+                    )}
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <View className="flex-1 items-center justify-center py-20">
+              <View 
+                className="w-24 h-24 rounded-3xl items-center justify-center mb-6"
+                style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}
+              >
+                <FeatherIcon name="package" size={48} color="#10b981" />
+              </View>
+              <Text className="text-gray-900 text-2xl font-black mb-2">
+                No Investments Found
+              </Text>
+              <Text className="text-gray-500 text-base text-center mb-8 px-8">
+                You don't have any {selectedTab === 'all' ? '' : selectedTab} investments yet. 
+                Start investing in commodities to build your portfolio.
+              </Text>
+              <TouchableOpacity
+                className="rounded-2xl px-8 py-4 shadow-lg"
+                style={{
+                  backgroundColor: '#059669',
+                  shadowColor: '#059669',
+                  shadowOffset: { width: 0, height: 8 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 20,
+                  elevation: 12,
+                }}
+                activeOpacity={0.8}
+              >
+                <View className="flex-row items-center">
+                  <FeatherIcon name="shopping-cart" size={20} color="white" />
+                  <Text className="text-white text-lg font-black ml-2">
+                    Browse Commodities
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

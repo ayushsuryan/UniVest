@@ -1,101 +1,124 @@
-import React, {useState, useEffect} from 'react';
-import {View, Text, ScrollView, RefreshControl, TouchableOpacity, Animated} from 'react-native';
+import React, {useState} from 'react';
+import {View, Text, ScrollView, TouchableOpacity, Image} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
-import CustomButton from '../../Components/CustomButton';
+
+interface Investment {
+  id: string;
+  commodity: string;
+  amount: number;
+  hourlyReturn: number;
+  totalReturns: number;
+  category: string;
+  status: 'active' | 'matured' | 'pending';
+  daysLeft: number;
+  image: string;
+}
 
 const Home: React.FC = () => {
-  const [refreshing, setRefreshing] = useState(false);
-  const [stats, setStats] = useState({
-    portfolioValue: 1245000,
-    todayGains: 18500,
-    totalReturns: 245000,
-    returnPercentage: 18.5,
-    activeInvestments: 8,
-  });
+  const [walletBalance] = useState(45750);
+  const [totalInvested] = useState(125000);
+  const [totalReturns] = useState(18500);
+  const [activeInvestments] = useState(6);
 
-  const [marketData, setMarketData] = useState([
-    { name: 'NIFTY 50', value: '22,147.90', change: '+1.2%', isPositive: true },
-    { name: 'SENSEX', value: '72,943.68', change: '+0.8%', isPositive: true },
-    { name: 'Gold', value: '₹6,247/10g', change: '-0.3%', isPositive: false },
-    { name: 'NIFTY 50', value: '22,147.90', change: '+1.2%', isPositive: true },
-    { name: 'SENSEX', value: '72,943.68', change: '+0.8%', isPositive: true },
-    { name: 'Gold', value: '₹6,247/10g', change: '-0.3%', isPositive: false },
-  ]);
+  const recentInvestments: Investment[] = [
+    {
+      id: '1',
+      commodity: 'Phone Chargers',
+      amount: 25000,
+      hourlyReturn: 0.8,
+      totalReturns: 4200,
+      category: 'Electronics',
+      status: 'active',
+      daysLeft: 18,
+      image: 'https://picsum.photos/200/200?random=7',
+    },
+    {
+      id: '2',
+      commodity: 'Bluetooth Earbuds',
+      amount: 35000,
+      hourlyReturn: 1.2,
+      totalReturns: 7800,
+      category: 'Electronics',
+      status: 'active',
+      daysLeft: 25,
+      image: 'https://picsum.photos/200/200?random=8',
+    },
+    {
+      id: '3',
+      commodity: 'Smart Watches',
+      amount: 20000,
+      hourlyReturn: 0.9,
+      totalReturns: 3600,
+      category: 'Wearables',
+      status: 'active',
+      daysLeft: 12,
+      image: 'https://picsum.photos/200/200?random=9',
+    },
+    {
+      id: '4',
+      commodity: 'Gaming Laptops',
+      amount: 45000,
+      hourlyReturn: 1.5,
+      totalReturns: 2800,
+      category: 'Electronics',
+      status: 'matured',
+      daysLeft: 0,
+      image: 'https://picsum.photos/200/200?random=10',
+    },
+  ];
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    setTimeout(() => {
-      setStats(prev => ({
-        ...prev,
-        portfolioValue: prev.portfolioValue + Math.random() * 5000,
-        todayGains: prev.todayGains + Math.random() * 1000,
-      }));
-      setRefreshing(false);
-    }, 2000);
+  const quickActions = [
+    {
+      id: '1',
+      title: 'Deposit',
+      subtitle: 'Add funds to wallet',
+      icon: 'plus-circle',
+      color: '#059669',
+      bg: 'rgba(5, 150, 105, 0.1)',
+    },
+    {
+      id: '2',
+      title: 'Withdraw',
+      subtitle: 'Transfer to bank',
+      icon: 'arrow-up-circle',
+      color: '#dc2626',
+      bg: 'rgba(220, 38, 38, 0.1)',
+    },
+    {
+      id: '3',
+      title: 'Invest',
+      subtitle: 'Browse commodities',
+      icon: 'shopping-cart',
+      color: '#7c3aed',
+      bg: 'rgba(124, 58, 237, 0.1)',
+    },
+    {
+      id: '4',
+      title: 'History',
+      subtitle: 'View transactions',
+      icon: 'clock',
+      color: '#ea580c',
+      bg: 'rgba(234, 88, 12, 0.1)',
+    },
+  ];
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return '#10b981';
+      case 'matured': return '#059669';
+      case 'pending': return '#f59e0b';
+      default: return '#6b7280';
+    }
   };
 
-  const StatCard = ({ icon, title, value, subtitle, color, index }: any) => {
-    return (
-      <View 
-        className="rounded-2xl p-5 w-[48%] mb-4 shadow-sm"
-        style={{ backgroundColor: color }}
-      >
-        <View className="flex-row items-center justify-between mb-3">
-          <View
-            className="rounded-xl p-2"
-            style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
-          >
-            <FeatherIcon name={icon} size={20} color="white" />
-          </View>
-          <Text className="text-white text-xs opacity-90 font-medium">
-            {subtitle}
-          </Text>
-        </View>
-        <Text className="text-white text-sm opacity-80 mb-1">{title}</Text>
-        <Text className="text-white text-xl font-black">{value}</Text>
-      </View>
-    );
-  };
-
-  const MarketTicker = ({ data }: any) => {
-    return (
-      <View className="bg-white rounded-2xl p-4 mr-4 shadow-sm border border-gray-100">
-        <Text className="text-gray-800 font-bold text-base mb-1">{data.name}</Text>
-        <Text className="text-gray-600 text-sm mb-2">{data.value}</Text>
-        <View className="flex-row items-center">
-          <FeatherIcon 
-            name={data.isPositive ? "trending-up" : "trending-down"} 
-            size={14} 
-            color={data.isPositive ? "#10b981" : "#ef4444"} 
-          />
-          <Text 
-            className={`text-sm font-bold ml-1 ${data.isPositive ? 'text-green-600' : 'text-red-500'}`}
-          >
-            {data.change}
-          </Text>
-        </View>
-      </View>
-    );
-  };
-
-  const QuickActionCard = ({ icon, title, subtitle, onPress, color }: any) => {
-    return (
-      <TouchableOpacity 
-        onPress={onPress}
-        activeOpacity={0.8}
-        className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex-1 mx-1"
-      >
-        <View
-          className="rounded-2xl p-4 mb-3 self-start"
-          style={{ backgroundColor: `${color}15` }}
-        >
-          <FeatherIcon name={icon} size={24} color={color} />
-        </View>
-        <Text className="text-gray-800 font-bold text-base mb-1">{title}</Text>
-        <Text className="text-gray-500 text-sm">{subtitle}</Text>
-      </TouchableOpacity>
-    );
+  const getStatusBg = (status: string) => {
+    switch (status) {
+      case 'active': return 'rgba(16, 185, 129, 0.1)';
+      case 'matured': return 'rgba(5, 150, 105, 0.1)';
+      case 'pending': return 'rgba(245, 158, 11, 0.1)';
+      default: return 'rgba(107, 114, 128, 0.1)';
+    }
   };
 
   return (
@@ -110,30 +133,19 @@ const Home: React.FC = () => {
           className="absolute bottom-0 left-0 w-48 h-48 rounded-full opacity-5"
           style={{ backgroundColor: '#10b981' }}
         />
+        <View
+          className="absolute top-40 left-8 w-32 h-32 rounded-full opacity-5"
+          style={{ backgroundColor: '#34d399' }}
+        />
       </View>
 
-      <ScrollView 
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
-            onRefresh={onRefresh}
-            tintColor="#059669"
-            colors={['#059669']}
-          />
-        }>
-        
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <View className="px-6 py-8 mb-6">
-          <View className="flex-row items-center justify-between mb-4">
+        <View className="px-6 pt-8 pb-6">
+          <View className="flex-row items-center justify-between mb-8">
             <View>
-              <Text className="text-gray-800 text-3xl font-black">
-                Good Morning! 👋
-              </Text>
-              <Text className="text-gray-600 text-base mt-1">
-                Your portfolio is performing well today
-              </Text>
+              <Text className="text-gray-500 text-base">Welcome back,</Text>
+              <Text className="text-gray-900 text-2xl font-black">Commodity Trader 👋</Text>
             </View>
             <TouchableOpacity
               className="rounded-2xl p-3 bg-white shadow-sm border border-gray-100"
@@ -143,195 +155,169 @@ const Home: React.FC = () => {
             </TouchableOpacity>
           </View>
 
-          {/* Portfolio Summary Card */}
-          <View className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100">
+          {/* Wallet Balance Card */}
+          <View className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100 mb-6">
             <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-gray-600 text-base font-medium">Total Portfolio Value</Text>
+              <Text className="text-gray-600 text-base font-medium">Wallet Balance</Text>
               <View className="flex-row items-center">
-                <FeatherIcon name="trending-up" size={16} color="#10b981" />
-                <Text className="text-green-600 text-sm font-bold ml-1">
-                  +{stats.returnPercentage}%
-                </Text>
+                <View className="w-3 h-3 bg-green-500 rounded-full mr-2" />
+                <Text className="text-green-600 text-sm font-bold">Available</Text>
               </View>
             </View>
-            <Text className="text-gray-900 text-4xl font-black mb-3">
-              ₹{(stats.portfolioValue / 100000).toFixed(2)}L
+            <Text className="text-gray-900 text-4xl font-black mb-6">
+              ₹{walletBalance.toLocaleString()}
             </Text>
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center">
-                <Text className="text-green-600 text-lg font-bold">
-                  +₹{(stats.todayGains / 1000).toFixed(1)}K
-                </Text>
-                <Text className="text-gray-500 text-sm ml-2">today</Text>
-              </View>
-              <View className="flex-row items-center">
-                <Text className="text-gray-500 text-sm mr-2">Total Returns:</Text>
-                <Text className="text-emerald-600 text-base font-bold">
-                  ₹{(stats.totalReturns / 1000).toFixed(0)}K
-                </Text>
-              </View>
+            <View className="flex-row space-x-4">
+              <TouchableOpacity
+                className="flex-1 rounded-2xl p-4 shadow-lg"
+                style={{
+                  backgroundColor: '#059669',
+                  shadowColor: '#059669',
+                  shadowOffset: { width: 0, height: 8 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 20,
+                  elevation: 12,
+                }}
+                activeOpacity={0.8}
+              >
+                <View className="flex-row items-center justify-center">
+                  <FeatherIcon name="plus" size={20} color="white" />
+                  <Text className="text-white text-lg font-black ml-2">Deposit</Text>
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="flex-1 rounded-2xl p-4 bg-gray-100 border border-gray-200"
+                activeOpacity={0.8}
+              >
+                <View className="flex-row items-center justify-center">
+                  <FeatherIcon name="arrow-up" size={20} color="#374151" />
+                  <Text className="text-gray-700 text-lg font-black ml-2">Withdraw</Text>
+                </View>
+              </TouchableOpacity>
             </View>
           </View>
-        </View>
 
-        {/* Market Overview */}
-        <View className="mb-6">
-          <View className="px-6 mb-4">
-            <Text className="text-gray-800 text-xl font-bold">Market Overview</Text>
-            <Text className="text-gray-600 text-sm">Live market data</Text>
-          </View>
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 24 }}
-          >
-            {marketData.map((item, index) => (
-              <MarketTicker key={index} data={item} />
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Stats Cards */}
-        <View className="px-6 mb-6">
-          <View className="flex-row flex-wrap justify-between">
-            <StatCard
-              icon="bar-chart-2"
-              title="Active Investments"
-              value={`${stats.activeInvestments} Assets`}
-              subtitle="Diversified"
-              color="#059669"
-              index={0}
-            />
-            <StatCard
-              icon="trending-up"
-              title="Monthly Returns"
-              value="12.3%"
-              subtitle="This Month"
-              color="#0891b2"
-              index={1}
-            />
-            <StatCard
-              icon="target"
-              title="Goal Progress"
-              value="68%"
-              subtitle="₹50L Target"
-              color="#7c3aed"
-              index={2}
-            />
-            <StatCard
-              icon="award"
-              title="Risk Score"
-              value="Medium"
-              subtitle="Balanced"
-              color="#ea580c"
-              index={3}
-            />
+          {/* Portfolio Stats */}
+          <View className="flex-row space-x-4 mb-6">
+            <View className="flex-1 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+              <Text className="text-gray-500 text-sm font-medium">Total Invested</Text>
+              <Text className="text-gray-900 text-xl font-black">
+                ₹{totalInvested.toLocaleString()}
+              </Text>
+            </View>
+            <View className="flex-1 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+              <Text className="text-gray-500 text-sm font-medium">Total Returns</Text>
+              <Text className="text-green-600 text-xl font-black">
+                +₹{totalReturns.toLocaleString()}
+              </Text>
+            </View>
+            <View className="flex-1 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+              <Text className="text-gray-500 text-sm font-medium">Active</Text>
+              <Text className="text-gray-900 text-xl font-black">
+                {activeInvestments}
+              </Text>
+            </View>
           </View>
         </View>
 
         {/* Quick Actions */}
         <View className="px-6 mb-6">
-          <Text className="text-gray-800 text-xl font-bold mb-4">Quick Actions</Text>
-          <View className="flex-row">
-            <QuickActionCard
-              icon="plus-circle"
-              title="Invest More"
-              subtitle="Add to portfolio"
-              color="#059669"
-              onPress={() => {}}
-            />
-            <QuickActionCard
-              icon="repeat"
-              title="Rebalance"
-              subtitle="Optimize allocation"
-              color="#0891b2"
-              onPress={() => {}}
-            />
-          </View>
-          <View className="flex-row mt-4">
-            <QuickActionCard
-              icon="download"
-              title="Withdraw"
-              subtitle="Cash out profits"
-              color="#dc2626"
-              onPress={() => {}}
-            />
-            <QuickActionCard
-              icon="pie-chart"
-              title="Analytics"
-              subtitle="View detailed reports"
-              color="#7c3aed"
-              onPress={() => {}}
-            />
+          <Text className="text-gray-900 text-xl font-black mb-4">Quick Actions</Text>
+          <View className="flex-row flex-wrap justify-between">
+            {quickActions.map((action) => (
+              <TouchableOpacity
+                key={action.id}
+                className="w-[48%] bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-4"
+                activeOpacity={0.8}
+              >
+                <View 
+                  className="w-12 h-12 rounded-2xl items-center justify-center mb-3"
+                  style={{ backgroundColor: action.bg }}
+                >
+                  <FeatherIcon name={action.icon as any} size={24} color={action.color} />
+                </View>
+                <Text className="text-gray-900 text-lg font-black">{action.title}</Text>
+                <Text className="text-gray-500 text-sm">{action.subtitle}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
 
-        {/* Recent Transactions */}
-        <View className="px-6 mb-8">
-          <View className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-gray-900 text-xl font-bold">
-                Recent Activity
-              </Text>
-              <TouchableOpacity>
-                <Text className="text-emerald-600 text-sm font-bold">View All</Text>
-              </TouchableOpacity>
-            </View>
-            <View className="space-y-4">
-              {[
-                {type: 'buy', title: 'Bought Growth Stocks', amount: '+₹25,000', time: '2 hours ago', icon: 'trending-up', color: '#10b981'},
-                {type: 'dividend', title: 'Dividend Received', amount: '+₹1,250', time: '1 day ago', icon: 'dollar-sign', color: '#059669'},
-                {type: 'sell', title: 'Sold Real Estate Fund', amount: '+₹45,000', time: '2 days ago', icon: 'home', color: '#0891b2'},
-                {type: 'withdraw', title: 'Withdrawal', amount: '-₹10,000', time: '3 days ago', icon: 'arrow-down', color: '#dc2626'},
-              ].map((activity, index) => (
-                <View key={index} className="flex-row items-center justify-between py-3 border-b border-gray-50 last:border-b-0">
+        {/* Recent Investments */}
+        <View className="px-6 pb-24">
+          <View className="flex-row items-center justify-between mb-4">
+            <Text className="text-gray-900 text-xl font-black">Recent Investments</Text>
+            <TouchableOpacity activeOpacity={0.8}>
+              <Text className="text-emerald-600 text-base font-bold">View All</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View className="space-y-4">
+            {recentInvestments.map((investment) => (
+              <View key={investment.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                <View className="flex-row items-center justify-between mb-3">
                   <View className="flex-row items-center flex-1">
-                    <View
-                      className="rounded-xl p-3 mr-4"
-                      style={{ backgroundColor: `${activity.color}15` }}
+                    <View 
+                      className="w-12 h-12 rounded-2xl mr-3 overflow-hidden"
+                      style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}
                     >
-                      <FeatherIcon name={activity.icon} size={18} color={activity.color} />
+                      <Image
+                        source={{ uri: investment.image }}
+                        className="w-full h-full"
+                        style={{ borderRadius: 16 }}
+                      />
                     </View>
                     <View className="flex-1">
-                      <Text className="text-gray-900 font-bold text-base">
-                        {activity.title}
+                      <Text className="text-gray-900 text-lg font-black">
+                        {investment.commodity}
                       </Text>
                       <Text className="text-gray-500 text-sm">
-                        {activity.time}
+                        {investment.category}
                       </Text>
                     </View>
                   </View>
-                  <Text 
-                    className={`font-bold text-base ${
-                      activity.type === 'withdraw' ? 'text-red-600' : 'text-green-600'
-                    }`}
+                  <View 
+                    className="px-3 py-1 rounded-full"
+                    style={{ 
+                      backgroundColor: getStatusBg(investment.status),
+                    }}
                   >
-                    {activity.amount}
-                  </Text>
+                    <Text 
+                      className="text-xs font-bold capitalize"
+                      style={{ color: getStatusColor(investment.status) }}
+                    >
+                      {investment.status}
+                    </Text>
+                  </View>
                 </View>
-              ))}
-            </View>
-          </View>
-        </View>
 
-        {/* Investment Tip */}
-        <View className="px-6 mb-8">
-          <View 
-            className="rounded-2xl p-6 border border-emerald-100"
-            style={{ backgroundColor: 'rgba(16, 185, 129, 0.05)' }}
-          >
-            <View className="flex-row items-center mb-3">
-              <View
-                className="rounded-xl p-2 mr-3"
-                style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}
-              >
-                <FeatherIcon name="lightbulb" size={20} color="#059669" />
+                <View className="flex-row justify-between items-center">
+                  <View>
+                    <Text className="text-gray-500 text-sm">Investment</Text>
+                    <Text className="text-gray-900 text-lg font-black">
+                      ₹{investment.amount.toLocaleString()}
+                    </Text>
+                  </View>
+                  <View className="items-center">
+                    <Text className="text-gray-500 text-sm">Hourly Return</Text>
+                    <Text className="text-green-600 text-lg font-black">
+                      {investment.hourlyReturn}%/hr
+                    </Text>
+                  </View>
+                  <View className="items-end">
+                    <Text className="text-gray-500 text-sm">
+                      {investment.status === 'matured' ? 'Total Earned' : 'Days Left'}
+                    </Text>
+                    <Text className="text-gray-900 text-lg font-black">
+                      {investment.status === 'matured' 
+                        ? `+₹${investment.totalReturns.toLocaleString()}`
+                        : `${investment.daysLeft} days`
+                      }
+                    </Text>
+                  </View>
+                </View>
               </View>
-              <Text className="text-emerald-800 font-bold text-lg">Investment Tip</Text>
-            </View>
-            <Text className="text-emerald-700 text-base leading-6">
-              Consider diversifying your portfolio with some defensive assets like bonds or gold to reduce volatility during market fluctuations.
-            </Text>
+            ))}
           </View>
         </View>
       </ScrollView>

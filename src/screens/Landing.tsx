@@ -134,11 +134,11 @@ const Landing: React.FC<LandingProps> = ({ navigation }) => {
     );
   };
 
-  const AssetCard = ({ icon, title, return_rate, risk_level, index }: any) => {
-    const assetAnim = useRef(new Animated.Value(0)).current;
+  const CommodityCard = ({ icon, title, return_rate, min_investment, index }: any) => {
+    const commodityAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
-      Animated.timing(assetAnim, {
+      Animated.timing(commodityAnim, {
         toValue: 1,
         duration: 600,
         delay: index * 150,
@@ -149,10 +149,10 @@ const Landing: React.FC<LandingProps> = ({ navigation }) => {
     return (
       <Animated.View
         style={{
-          opacity: assetAnim,
+          opacity: commodityAnim,
           transform: [
             {
-              translateX: assetAnim.interpolate({
+              translateX: commodityAnim.interpolate({
                 inputRange: [0, 1],
                 outputRange: [50, 0],
               }),
@@ -172,7 +172,7 @@ const Landing: React.FC<LandingProps> = ({ navigation }) => {
           <View className="flex-row justify-between items-center mb-3">
             <Text className="text-emerald-600 text-xl font-black">{return_rate}</Text>
             <View className="rounded-full px-3 py-1 bg-gray-100">
-              <Text className="text-gray-600 text-xs font-medium">{risk_level}</Text>
+              <Text className="text-gray-600 text-xs font-medium">{min_investment}</Text>
             </View>
           </View>
           <TouchableOpacity
@@ -238,21 +238,21 @@ const Landing: React.FC<LandingProps> = ({ navigation }) => {
                   className="w-20 h-20 rounded-2xl items-center justify-center"
                   style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}
                 >
-                  <FeatherIcon name="trending-up" size={40} color="#059669" />
+                  <FeatherIcon name="package" size={40} color="#059669" />
                 </View>
               </View>
             </Animated.View>
 
             <View className="items-center mb-10">
               <Text className="text-gray-800 text-4xl font-black text-center mb-3">
-                Wealth<Text className="text-emerald-600">Builder</Text>
+                Commodity<Text className="text-emerald-600">Invest</Text>
               </Text>
               <View
                 className="rounded-full px-6 py-3 border border-emerald-200"
                 style={{ backgroundColor: 'rgba(16, 185, 129, 0.08)' }}
               >
                 <Text className="text-emerald-700 text-lg font-bold text-center">
-                  💰 Smart Investment Platform 💰
+                  📦 Smart Commodity Trading 📦
                 </Text>
               </View>
             </View>
@@ -265,15 +265,15 @@ const Landing: React.FC<LandingProps> = ({ navigation }) => {
               <View className="flex-row items-center justify-center">
                 <View className="w-3 h-3 bg-green-500 rounded-full mr-3 animate-pulse" />
                 <Text className="text-green-600 text-sm font-bold mr-4">
-                  Markets Open
+                  Live Trading
                 </Text>
                 <Text className="text-gray-400 text-sm mr-4">•</Text>
                 <Text className="text-gray-700 text-sm font-semibold mr-4">
-                  25K+ Investors
+                  15K+ Investors
                 </Text>
                 <Text className="text-gray-400 text-sm mr-4">•</Text>
                 <Text className="text-emerald-600 text-sm font-bold">
-                  ₹500Cr+ AUM
+                  ₹250Cr+ Volume
                 </Text>
               </View>
             </View>
@@ -297,22 +297,20 @@ const Landing: React.FC<LandingProps> = ({ navigation }) => {
               <View className="flex-row items-center justify-center">
                 <FeatherIcon name="arrow-right" size={22} color="white" />
                 <Text className="text-white text-lg font-bold ml-3">
-                  Start Investing Today
+                  Start Commodity Trading
                 </Text>
               </View>
             </TouchableOpacity>
-
-     
           </View>
 
-          {/* Featured Assets Section */}
+          {/* Featured Commodities Section */}
           <View className="mb-12">
             <View className="px-6 mb-6">
               <Text className="text-gray-800 text-2xl font-black mb-2">
-                Featured Investment Assets
+                Featured Commodities
               </Text>
               <Text className="text-gray-600 text-base">
-                Diversified portfolio of high-performing assets
+                High-demand products with hourly returns
               </Text>
             </View>
 
@@ -321,32 +319,32 @@ const Landing: React.FC<LandingProps> = ({ navigation }) => {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ paddingHorizontal: 24 }}
             >
-              <AssetCard
-                icon="bar-chart-2"
-                title="Growth Stocks"
-                return_rate="12.5%"
-                risk_level="Medium"
+              <CommodityCard
+                icon="smartphone"
+                title="Phone Chargers"
+                return_rate="0.8%/hr"
+                min_investment="₹500"
                 index={0}
               />
-              <AssetCard
-                icon="home"
-                title="Real Estate"
-                return_rate="8.7%"
-                risk_level="Low"
+              <CommodityCard
+                icon="headphones"
+                title="Bluetooth Earbuds"
+                return_rate="1.2%/hr"
+                min_investment="₹1000"
                 index={1}
               />
-              <AssetCard
-                icon="dollar-sign"
-                title="Bonds & FD"
-                return_rate="6.2%"
-                risk_level="Very Low"
+              <CommodityCard
+                icon="monitor"
+                title="LED Monitors"
+                return_rate="0.6%/hr"
+                min_investment="₹2000"
                 index={2}
               />
-              <AssetCard
-                icon="zap"
-                title="Crypto Assets"
-                return_rate="18.3%"
-                risk_level="High"
+              <CommodityCard
+                icon="cpu"
+                title="Gaming Laptops"
+                return_rate="1.5%/hr"
+                min_investment="₹5000"
                 index={3}
               />
             </ScrollView>
@@ -356,29 +354,29 @@ const Landing: React.FC<LandingProps> = ({ navigation }) => {
           <View className="px-6 mb-12">
             <View className="items-center mb-12">
               <Text className="text-gray-800 text-3xl font-black text-center mb-3">
-                Why Invest with <Text className="text-emerald-600">Us?</Text>
+                Why Trade <Text className="text-emerald-600">Commodities?</Text>
               </Text>
               <View className="w-20 h-1 bg-emerald-500 rounded-full" />
             </View>
 
             <FeatureCard
-              icon="target"
-              title="Expert Asset Management"
-              description="Our team of certified financial experts curate and manage a diversified portfolio of high-growth assets across multiple sectors."
+              icon="clock"
+              title="Hourly Returns"
+              description="Earn returns every hour based on real-time supply and demand. Get credited 0.01% to 1% hourly depending on market conditions."
               index={0}
             />
 
             <FeatureCard
               icon="trending-up"
-              title="Consistent Returns"
-              description="Track record of delivering superior returns with our data-driven investment strategies and risk management protocols."
+              title="Real Market Dynamics"
+              description="Our platform tracks actual commodity demand and adjusts your returns accordingly. Higher demand means higher hourly returns."
               index={1}
             />
 
             <FeatureCard
               icon="shield"
-              title="Regulated & Secure"
-              description="SEBI registered platform with insurance protection, transparent reporting, and bank-grade security for your investments."
+              title="Secure & Transparent"
+              description="All investments are backed by real commodity inventory. Track your portfolio performance and withdraw after maturity period."
               index={2}
             />
           </View>
@@ -392,7 +390,7 @@ const Landing: React.FC<LandingProps> = ({ navigation }) => {
                   style={{ backgroundColor: 'rgba(16, 185, 129, 0.08)' }}
                 >
                   <Text className="text-emerald-700 text-lg font-bold">
-                    📈 Platform Performance
+                    📊 Platform Statistics
                   </Text>
                 </View>
               </View>
@@ -400,20 +398,20 @@ const Landing: React.FC<LandingProps> = ({ navigation }) => {
               <View className="flex-row justify-around">
                 <StatCard
                   icon="users"
-                  value="25K+"
-                  label="Active Investors"
+                  value="15K+"
+                  label="Active Traders"
                   index={0}
                 />
                 <StatCard
-                  icon="dollar-sign"
-                  value="₹500Cr+"
-                  label="Assets Under Management"
+                  icon="package"
+                  value="₹250Cr+"
+                  label="Commodity Volume"
                   index={1}
                 />
                 <StatCard
-                  icon="award"
-                  value="11.2%"
-                  label="Average Returns"
+                  icon="percent"
+                  value="18.2%"
+                  label="Average Monthly Returns"
                   index={2}
                 />
               </View>
@@ -425,16 +423,18 @@ const Landing: React.FC<LandingProps> = ({ navigation }) => {
             <View className="rounded-2xl p-6 bg-white border border-emerald-100">
               <View className="flex-row justify-center items-center flex-wrap">
                 <Text className="text-gray-600 text-sm font-medium mr-6 mb-2">
-                  SEBI Registered
+                  RBI Approved
                 </Text>
                 <Text className="text-gray-600 text-sm font-medium mr-6 mb-2">
                   ISO 27001 Certified
                 </Text>
-                
+                <Text className="text-gray-600 text-sm font-medium mr-6 mb-2">
+                  Commodity Exchange Registered
+                </Text>
               </View>
               <View className="items-center mt-4">
                 <Text className="text-gray-500 text-xs text-center">
-                  Investments are subject to market risks. Please read all documents carefully.
+                  Commodity investments are subject to market risks. Please read all documents carefully.
                 </Text>
               </View>
             </View>

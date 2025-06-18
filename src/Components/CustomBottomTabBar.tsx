@@ -175,7 +175,7 @@ const CustomBottomTabBar: React.FC<CustomBottomTabBarProps> = ({
               onLongPress={onLongPress}
               activeOpacity={0.7}
               style={{
-                flex: 1,
+                width: `${100 / state.routes.length}%`,
                 alignItems: 'center',
                 justifyContent: 'center',
                 paddingVertical: 8,
@@ -204,7 +204,7 @@ const CustomBottomTabBar: React.FC<CustomBottomTabBarProps> = ({
                 >
                   <FeatherIcon
                     name={getTabIcon(route.name)}
-                    size={isFocused ? 24 : 22}
+                    size={isFocused ? 20 : 18}
                     color={isFocused ? '#059669' : '#6B7280'}
                     style={{
                       marginBottom: isFocused ? 4 : 2,
