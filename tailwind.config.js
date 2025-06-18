@@ -1,5 +1,5 @@
 module.exports = {
-  content: ["./App.tsx", "./src/Pages/**/*.{js,jsx,ts,tsx}" , "./src/Components/**/*.{js,jsx,ts,tsx}"],
+  content: ["./App.tsx", "./src/**/*.{js,jsx,ts,tsx}"],
   presets: [require("nativewind/preset")],
   theme: {
     extend: {

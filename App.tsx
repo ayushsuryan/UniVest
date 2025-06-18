@@ -1,22 +1,27 @@
-import "./global.css"
-import Landing from "./src/Pages/Landing";
+import React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import Signup from "./src/Pages/Signup";
+import Landing from './src/screens/Landing';
+import Login from './src/screens/Login';
+import Dashboard from './src/screens/Dashboard';
+import './global.css';
 
 const Stack = createNativeStackNavigator();
- 
-export default function App() {
+
+const App: React.FC = () => {
   return (
     <NavigationContainer>
-      <Stack.Navigator>
-        <Stack.Screen
-          name="Landing"
-          component={Landing}
-          options={{headerShown: false}}
-        />
-        <Stack.Screen name="Signup" component={Signup}  options={{headerShown: false}}/>
+      <Stack.Navigator
+        initialRouteName="Landing"
+        screenOptions={{
+          headerShown: false,
+        }}>
+        <Stack.Screen name="Landing" component={Landing} />
+        <Stack.Screen name="Login" component={Login} />
+        <Stack.Screen name="Dashboard" component={Dashboard} />
       </Stack.Navigator>
     </NavigationContainer>
   );
-}
+};
+
+export default App;
