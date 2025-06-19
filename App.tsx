@@ -4,6 +4,9 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import Landing from './src/screens/Landing';
 import Login from './src/screens/Login';
+import Signup from './src/screens/Signup';
+import OTPVerification from './src/screens/OTPVerification';
+import ResetPassword from './src/screens/ResetPassword';
 import Dashboard from './src/screens/Dashboard';
 import Assets from './src/screens/dashboard/Assets'; 
 import Profile from './src/screens/dashboard/Profile'; 
@@ -39,6 +42,9 @@ const App: React.FC = () => {
         }}>
         <Stack.Screen name="Landing" component={Landing} />
         <Stack.Screen name="Login" component={Login} />
+        <Stack.Screen name="Signup" component={Signup} />
+        <Stack.Screen name="OTPVerification" component={OTPVerification} />
+        <Stack.Screen name="ResetPassword" component={ResetPassword} />
         <Stack.Screen name="Dashboard" component={DashboardTabs} />
       </Stack.Navigator>
     </NavigationContainer>

@@ -1,9 +1,7 @@
 import React, {useState} from 'react';
-import {View, Text, TouchableOpacity, Alert, Image} from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import {View, Text, TouchableOpacity, Alert, ScrollView} from 'react-native';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import CustomInput from '../Components/CustomInput';
-import CustomButton from '../Components/CustomButton';
 
 interface LoginProps {
   navigation: any;
@@ -56,7 +54,7 @@ const Login: React.FC<LoginProps> = ({navigation}) => {
   };
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: '#f8fafc' }}>
+    <ScrollView className="flex-1" style={{ backgroundColor: '#f8fafc' }}>
       {/* Decorative Background Elements */}
       <View className="absolute inset-0">
         <View
@@ -154,7 +152,10 @@ const Login: React.FC<LoginProps> = ({navigation}) => {
             error={errors.password}
           />
 
-          <TouchableOpacity className="self-end mb-8">
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('ResetPassword')}
+            className="self-end mb-8"
+          >
             <View className="flex-row items-center">
               <FeatherIcon name="help-circle" size={16} color="#059669" />
               <Text className="text-emerald-600 text-sm font-medium ml-2">
@@ -197,30 +198,13 @@ const Login: React.FC<LoginProps> = ({navigation}) => {
             </View>
           </TouchableOpacity>
 
-          {/* Alternative Login Options */}
-          <View className="items-center mb-6">
-            <Text className="text-gray-500 text-sm mb-4">Or continue with</Text>
-            <View className="flex-row space-x-4">
-              <TouchableOpacity
-                className="rounded-2xl p-4 border border-gray-200 bg-white shadow-sm"
-                activeOpacity={0.8}
-              >
-                <FeatherIcon name="smartphone" size={24} color="#6b7280" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="rounded-2xl p-4 border border-gray-200 bg-white shadow-sm"
-                activeOpacity={0.8}
-              >
-                <FeatherIcon name="fingerprint" size={24} color="#6b7280" />
-              </TouchableOpacity>
-            </View>
-          </View>
+      
         </View>
 
         {/* Footer */}
         <View className="flex-row justify-center items-center mb-6">
           <Text className="text-gray-600 text-base">New to investing? </Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
             <Text className="text-emerald-600 text-base font-bold">
               Create Account
             </Text>
@@ -252,7 +236,7 @@ const Login: React.FC<LoginProps> = ({navigation}) => {
           </View>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </ScrollView>
   );
 };
 

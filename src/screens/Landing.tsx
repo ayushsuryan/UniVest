@@ -295,9 +295,25 @@ const Landing: React.FC<LandingProps> = ({ navigation }) => {
               }}
             >
               <View className="flex-row items-center justify-center">
-                <FeatherIcon name="arrow-right" size={22} color="white" />
+                <FeatherIcon name="log-in" size={22} color="white" />
                 <Text className="text-white text-lg font-bold ml-3">
-                  Start Commodity Trading
+                  Sign In to Trade
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Signup')}
+              activeOpacity={0.8}
+              className="rounded-2xl p-5 border-2 border-emerald-600"
+              style={{
+                backgroundColor: 'transparent',
+              }}
+            >
+              <View className="flex-row items-center justify-center">
+                <FeatherIcon name="user-plus" size={22} color="#059669" />
+                <Text className="text-emerald-600 text-lg font-bold ml-3">
+                  Create New Account
                 </Text>
               </View>
             </TouchableOpacity>
