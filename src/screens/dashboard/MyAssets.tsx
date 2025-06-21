@@ -1,107 +1,152 @@
-import React, {useState} from 'react';
-import {View, Text, ScrollView, TouchableOpacity, Image} from 'react-native';
+import React, {useState, useEffect} from 'react';
+import {View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl, Alert} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
+import InvestmentService from '../../connections/investments';
 
 interface MyInvestment {
-  id: string;
-  commodity: string;
-  category: string;
-  invested: number;
+  _id: string;
+  asset: {
+    _id: string;
+    name: string;
+    category: string;
+    image: string;
+    price: number;
+    hourlyReturnPercentage: number;
+    maturityPeriod: string;
+  };
+  investedAmount: number;
   currentValue: number;
-  hourlyReturn: number;
   totalReturns: number;
-  status: 'active' | 'matured' | 'pending';
+  status: 'active' | 'matured' | 'cashed_out';
+  investmentDate: string;
+  maturityDate: string;
   daysLeft: number;
-  investedDate: string;
-  image: string;
+  returnPercentage: string;
+}
+
+interface PortfolioStats {
+  totalInvested: number;
+  totalCurrentValue: number;
+  totalReturns: number;
+  activeInvestments: number;
+  totalInvestments: number;
+  balance: number;
+  referralBalance: number;
+  referredUsers: number;
 }
 
 const MyAssets: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState('all');
-  const [portfolioValue] = useState(187500);
-  const [totalInvested] = useState(150000);
-  const [totalReturns] = useState(37500);
-  const [activeInvestments] = useState(5);
-  const [referralBalance] = useState(2500);
-  const [referredUsers] = useState(5);
+  const [investments, setInvestments] = useState<MyInvestment[]>([]);
+  const [portfolioStats, setPortfolioStats] = useState<PortfolioStats>({
+    totalInvested: 0,
+    totalCurrentValue: 0,
+    totalReturns: 0,
+    activeInvestments: 0,
+    totalInvestments: 0,
+    balance: 0,
+    referralBalance: 0,
+    referredUsers: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const myInvestments: MyInvestment[] = [
-    {
-      id: '1',
-      commodity: 'Phone Chargers',
-      category: 'Electronics',
-      invested: 25000,
-      currentValue: 29200,
-      hourlyReturn: 0.8,
-      totalReturns: 4200,
-      status: 'active',
-      daysLeft: 18,
-      investedDate: '2024-01-15',
-      image: 'https://picsum.photos/200/200?random=11',
-    },
-    {
-      id: '2',
-      commodity: 'Bluetooth Earbuds',
-      category: 'Electronics',
-      invested: 35000,
-      currentValue: 42800,
-      hourlyReturn: 1.2,
-      totalReturns: 7800,
-      status: 'active',
-      daysLeft: 25,
-      investedDate: '2024-01-10',
-      image: 'https://picsum.photos/200/200?random=12',
-    },
-    {
-      id: '3',
-      commodity: 'Smart Watches',
-      category: 'Wearables',
-      invested: 20000,
-      currentValue: 23600,
-      hourlyReturn: 0.9,
-      totalReturns: 3600,
-      status: 'active',
-      daysLeft: 12,
-      investedDate: '2024-01-20',
-      image: 'https://picsum.photos/200/200?random=13',
-    },
-    {
-      id: '4',
-      commodity: 'Gaming Laptops',
-      category: 'Electronics',
-      invested: 45000,
-      currentValue: 47800,
-      hourlyReturn: 1.5,
-      totalReturns: 2800,
-      status: 'matured',
-      daysLeft: 0,
-      investedDate: '2023-12-01',
-      image: 'https://picsum.photos/200/200?random=14',
-    },
-    {
-      id: '5',
-      commodity: 'Wireless Mice',
-      category: 'Accessories',
-      invested: 25000,
-      currentValue: 25900,
-      hourlyReturn: 0.4,
-      totalReturns: 900,
-      status: 'pending',
-      daysLeft: 30,
-      investedDate: '2024-01-25',
-      image: 'https://picsum.photos/200/200?random=15',
-    },
-  ];
+  // Load investments and portfolio stats
+  const loadData = async (showRefreshIndicator = false) => {
+    try {
+      if (showRefreshIndicator) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+
+      // Load investments and portfolio stats in parallel
+      const [investmentsResponse, portfolioResponse] = await Promise.all([
+        InvestmentService.getUserInvestments(),
+        InvestmentService.getPortfolioStats()
+      ]);
+
+      if (investmentsResponse.success) {
+        setInvestments(investmentsResponse.data);
+      } else {
+        setError(investmentsResponse.message);
+      }
+
+      if (portfolioResponse.success) {
+        setPortfolioStats(portfolioResponse.data);
+      }
+
+    } catch (error) {
+      console.error('Error loading data:', error);
+      setError('Failed to load data. Please try again.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  // Load data on component mount and tab change
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // Pull to refresh
+  const onRefresh = () => {
+    loadData(true);
+  };
+
+  // Handle cash out
+  const handleCashOut = (investment: MyInvestment) => {
+    if (investment.status !== 'active') {
+      Alert.alert('Error', 'This investment is not active');
+      return;
+    }
+
+    // Calculate penalty
+    const penaltyAmount = investment.currentValue * 0.38;
+    const finalAmount = investment.currentValue - penaltyAmount;
+
+    Alert.alert(
+      'Cash Out Early?',
+      `You will receive ₹${finalAmount.toLocaleString()} after 38% penalty (₹${penaltyAmount.toLocaleString()}). Continue?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Cash Out', 
+          style: 'destructive',
+          onPress: () => performCashOut(investment._id)
+        }
+      ]
+    );
+  };
+
+  const performCashOut = async (investmentId: string) => {
+    try {
+      const response = await InvestmentService.cashOutInvestment(investmentId);
+      
+      if (response.success) {
+        Alert.alert('Success', 'Investment cashed out successfully!');
+        loadData(); // Refresh data
+      } else {
+        Alert.alert('Error', response.message || 'Failed to cash out investment');
+      }
+    } catch (error) {
+      console.error('Cash out error:', error);
+      Alert.alert('Error', 'Failed to cash out investment. Please try again.');
+    }
+  };
 
   const tabs = [
     {key: 'all', label: 'All Investments'},
     {key: 'active', label: 'Active'},
     {key: 'matured', label: 'Matured'},
-    {key: 'pending', label: 'Pending'},
+    {key: 'cashed_out', label: 'Cashed Out'},
   ];
 
-  const filteredInvestments = myInvestments.filter(investment => {
+  const filteredInvestments = investments.filter(investment => {
     if (selectedTab === 'all') return true;
     return investment.status === selectedTab;
   });
@@ -110,7 +155,7 @@ const MyAssets: React.FC = () => {
     switch (status) {
       case 'active': return '#10b981';
       case 'matured': return '#059669';
-      case 'pending': return '#f59e0b';
+      case 'cashed_out': return '#f59e0b';
       default: return '#6b7280';
     }
   };
@@ -119,14 +164,32 @@ const MyAssets: React.FC = () => {
     switch (status) {
       case 'active': return 'rgba(16, 185, 129, 0.1)';
       case 'matured': return 'rgba(5, 150, 105, 0.1)';
-      case 'pending': return 'rgba(245, 158, 11, 0.1)';
+      case 'cashed_out': return 'rgba(245, 158, 11, 0.1)';
       default: return 'rgba(107, 114, 128, 0.1)';
     }
   };
 
   const getReturnPercentage = (invested: number, returns: number) => {
+    if (invested === 0) return '0.0';
     return ((returns / invested) * 100).toFixed(1);
   };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  if (loading && !refreshing) {
+    return (
+      <SafeAreaView className="flex-1 justify-center items-center" style={{ backgroundColor: '#f8fafc' }}>
+        <ActivityIndicator size="large" color="#059669" />
+        <Text className="text-gray-600 mt-4">Loading investments...</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: '#f8fafc' }}>
@@ -146,7 +209,13 @@ const MyAssets: React.FC = () => {
         />
       </View>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        className="flex-1" 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         {/* Header */}
         <View className="px-6 py-8 mb-6">
           <View className="flex-row items-center justify-between mb-6">
@@ -161,8 +230,9 @@ const MyAssets: React.FC = () => {
             <TouchableOpacity
               className="rounded-2xl p-3 bg-white shadow-sm border border-gray-100"
               activeOpacity={0.8}
+              onPress={onRefresh}
             >
-              <FeatherIcon name="more-vertical" size={24} color="#059669" />
+              <FeatherIcon name="refresh-cw" size={24} color="#059669" />
             </TouchableOpacity>
           </View>
 
@@ -173,50 +243,50 @@ const MyAssets: React.FC = () => {
               <View className="flex-row items-center">
                 <FeatherIcon name="trending-up" size={16} color="#10b981" />
                 <Text className="text-green-600 text-sm font-bold ml-1">
-                  +{getReturnPercentage(totalInvested, totalReturns)}%
+                  +{getReturnPercentage(portfolioStats.totalInvested, portfolioStats.totalReturns)}%
                 </Text>
               </View>
             </View>
             <Text className="text-gray-900 text-4xl font-black mb-4">
-              ₹{portfolioValue.toLocaleString()}
+              ₹{portfolioStats.totalCurrentValue.toLocaleString()}
             </Text>
             <View className="flex-row justify-between">
               <View>
                 <Text className="text-gray-500 text-sm">Invested</Text>
-                <Text className="text-gray-900 text-xl font-black">₹{totalInvested.toLocaleString()}</Text>
+                <Text className="text-gray-900 text-xl font-black">₹{portfolioStats.totalInvested.toLocaleString()}</Text>
               </View>
               <View>
                 <Text className="text-gray-500 text-sm">Returns</Text>
-                <Text className="text-green-600 text-xl font-black">+₹{totalReturns.toLocaleString()}</Text>
+                <Text className="text-green-600 text-xl font-black">+₹{portfolioStats.totalReturns.toLocaleString()}</Text>
               </View>
               <View>
                 <Text className="text-gray-500 text-sm">Active</Text>
-                <Text className="text-gray-900 text-xl font-black">{activeInvestments}</Text>
+                <Text className="text-gray-900 text-xl font-black">{portfolioStats.activeInvestments}</Text>
               </View>
             </View>
           </View>
 
-          {/* Referral Stats Card */}
+          {/* Balance & Referral Stats Card */}
           <View className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-3xl p-6 shadow-lg mb-6">
             <View className="flex-row items-center justify-between mb-4">
               <Text className="text-black text-xl font-black">
-                Referral Rewards 
+                Account Balance
               </Text>
               <View 
                 className="w-12 h-12 rounded-2xl items-center justify-center"
                 style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
               >
-                <FeatherIcon name="users" size={24} color="black" />
+                <FeatherIcon name="dollar-sign" size={24} color="black" />
               </View>
             </View>
             <View className="flex-row justify-between">
               <View>
-                <Text className="text-black text-sm">Referral Balance</Text>
-                <Text className="text-black text-2xl font-black">₹{referralBalance.toLocaleString()}</Text>
+                <Text className="text-black text-sm">Available Balance</Text>
+                <Text className="text-black text-2xl font-black">₹{portfolioStats.balance.toLocaleString()}</Text>
               </View>
               <View>
-                <Text className="text-black text-sm">Referred Users</Text>
-                <Text className="text-black text-2xl font-black">{referredUsers}</Text>
+                <Text className="text-black text-sm">Referral Rewards</Text>
+                <Text className="text-black text-2xl font-black">₹{portfolioStats.referralBalance.toLocaleString()}</Text>
               </View>
             </View>
             <TouchableOpacity
@@ -224,7 +294,7 @@ const MyAssets: React.FC = () => {
               activeOpacity={0.8}
             >
               <Text className="text-emerald-600 text-base font-black">
-                Invite More Friends
+                Invite Friends
               </Text>
             </TouchableOpacity>
           </View>
@@ -251,13 +321,11 @@ const MyAssets: React.FC = () => {
                   shadowOffset: { width: 0, height: 4 },
                   shadowOpacity: 0.3,
                   shadowRadius: 8,
-                  elevation: selectedTab === tab.key ? 8 : 2,
                 }}
+                activeOpacity={0.8}
               >
-                <Text className={`font-bold ${
-                  selectedTab === tab.key
-                    ? 'text-white'
-                    : 'text-gray-700'
+                <Text className={`font-bold text-sm ${
+                  selectedTab === tab.key ? 'text-white' : 'text-gray-700'
                 }`}>
                   {tab.label}
                 </Text>
@@ -266,192 +334,102 @@ const MyAssets: React.FC = () => {
           </ScrollView>
         </View>
 
-        {/* Investments Content */}
-        <View className="px-6 pb-24">
-          {filteredInvestments.length > 0 ? (
-            <View className="space-y-4">
-              {filteredInvestments.map((investment) => (
-                <View key={investment.id} className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100">
-                  <View className="flex-row justify-between items-start mb-4">
-                    <View className="flex-row items-center flex-1">
-                      <View 
-                        className="w-16 h-16 rounded-2xl mr-4 shadow-sm overflow-hidden"
-                        style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}
-                      >
-                        <Image
-                          source={{ uri: investment.image }}
-                          className="w-full h-full"
-                          style={{ borderRadius: 16 }}
-                        />
-                      </View>
-                      <View className="flex-1">
-                        <Text className="text-gray-900 text-xl font-black">
-                          {investment.commodity}
-                        </Text>
-                        <Text className="text-gray-500 text-base font-medium">
-                          {investment.category}
-                        </Text>
-                        <Text className="text-gray-400 text-sm mt-1">
-                          Invested on {new Date(investment.investedDate).toLocaleDateString()}
-                        </Text>
-                      </View>
-                    </View>
-                    <View 
-                      className="px-4 py-2 rounded-2xl border"
-                      style={{ 
-                        backgroundColor: getStatusBg(investment.status),
-                        borderColor: getStatusColor(investment.status)
-                      }}
+        {/* Error Message */}
+        {error && (
+          <View className="mx-6 mb-4 p-4 bg-red-50 rounded-2xl border border-red-200">
+            <Text className="text-red-600 text-center">{error}</Text>
+            <TouchableOpacity 
+              onPress={() => loadData()}
+              className="mt-2 py-2 px-4 bg-red-600 rounded-xl self-center"
+            >
+              <Text className="text-white font-bold">Retry</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Investments List */}
+        <View className="px-6">
+          {filteredInvestments.map((investment) => (
+            <TouchableOpacity
+              key={investment._id}
+              className="bg-white rounded-3xl p-6 mb-6 shadow-lg border border-gray-100"
+              activeOpacity={0.95}
+            >
+              <View className="flex-row items-center mb-4">
+                <Image
+                  source={{ uri: investment.asset.image }}
+                  className="w-16 h-16 rounded-2xl mr-4"
+                  style={{ backgroundColor: '#f3f4f6' }}
+                />
+                <View className="flex-1">
+                  <Text className="text-gray-900 text-lg font-black">{investment.asset.name}</Text>
+                  <Text className="text-gray-500 text-sm">{investment.asset.category}</Text>
+                  <View 
+                    className="mt-1 px-3 py-1 rounded-full self-start"
+                    style={{ backgroundColor: getStatusBg(investment.status) }}
+                  >
+                    <Text 
+                      className="text-xs font-bold capitalize"
+                      style={{ color: getStatusColor(investment.status) }}
                     >
-                      <Text 
-                        className="text-sm font-bold capitalize"
-                        style={{ color: getStatusColor(investment.status) }}
-                      >
-                        {investment.status}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View className="flex-row justify-between items-center mb-4">
-                    <View className="flex-1">
-                      <Text className="text-gray-500 text-sm font-medium">Invested Amount</Text>
-                      <Text className="text-gray-900 text-xl font-black">
-                        ₹{investment.invested.toLocaleString()}
-                      </Text>
-                    </View>
-                    <View className="flex-1 items-center">
-                      <Text className="text-gray-500 text-sm font-medium">Current Value</Text>
-                      <Text className="text-gray-900 text-xl font-black">
-                        ₹{investment.currentValue.toLocaleString()}
-                      </Text>
-                    </View>
-                    <View className="flex-1 items-end">
-                      <Text className="text-gray-500 text-sm font-medium">Returns</Text>
-                      <Text className="text-green-600 text-xl font-black">
-                        +₹{investment.totalReturns.toLocaleString()}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View className="flex-row justify-between items-center mb-6">
-                    <View className="flex-row items-center">
-                      <FeatherIcon name="percent" size={16} color="#10b981" />
-                      <Text className="text-green-600 text-sm font-bold ml-2">
-                        {investment.hourlyReturn}%/hr
-                      </Text>
-                    </View>
-                    <View className="flex-row items-center">
-                      <FeatherIcon name="calendar" size={16} color="#6b7280" />
-                      <Text className="text-gray-500 text-sm ml-2">
-                        {investment.status === 'matured' 
-                          ? 'Completed' 
-                          : `${investment.daysLeft} days left`
-                        }
-                      </Text>
-                    </View>
-                    <View className="flex-row items-center">
-                      <Text className="text-green-600 text-sm font-bold">
-                        +{getReturnPercentage(investment.invested, investment.totalReturns)}%
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View className="flex-row space-x-3">
-                    {investment.status === 'matured' ? (
-                      <TouchableOpacity
-                        className="flex-1 rounded-2xl p-4 shadow-lg"
-                        style={{
-                          backgroundColor: '#059669',
-                          shadowColor: '#059669',
-                          shadowOffset: { width: 0, height: 8 },
-                          shadowOpacity: 0.3,
-                          shadowRadius: 20,
-                          elevation: 12,
-                        }}
-                        activeOpacity={0.8}
-                      >
-                        <View className="flex-row items-center justify-center">
-                          <FeatherIcon name="download" size={20} color="white" />
-                          <Text className="text-white text-lg font-black ml-2">
-                            Withdraw
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
-                    ) : (
-                      <>
-                        <TouchableOpacity
-                          className="flex-1 rounded-2xl p-4 bg-gray-100 border border-gray-200"
-                          activeOpacity={0.8}
-                        >
-                          <View className="flex-row items-center justify-center">
-                            <FeatherIcon name="bar-chart-2" size={20} color="#374151" />
-                            <Text className="text-gray-700 text-lg font-black ml-2">
-                              Details
-                            </Text>
-                          </View>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          className="flex-1 rounded-2xl p-4 shadow-lg"
-                          style={{
-                            backgroundColor: '#059669',
-                            shadowColor: '#059669',
-                            shadowOffset: { width: 0, height: 8 },
-                            shadowOpacity: 0.3,
-                            shadowRadius: 20,
-                            elevation: 12,
-                          }}
-                          activeOpacity={0.8}
-                        >
-                          <View className="flex-row items-center justify-center">
-                            <FeatherIcon name="plus" size={20} color="white" />
-                            <Text className="text-white text-lg font-black ml-2">
-                              Add More
-                            </Text>
-                          </View>
-                        </TouchableOpacity>
-                      </>
-                    )}
+                      {investment.status.replace('_', ' ')}
+                    </Text>
                   </View>
                 </View>
-              ))}
-            </View>
-          ) : (
-            <View className="flex-1 items-center justify-center py-20">
-              <View 
-                className="w-24 h-24 rounded-3xl items-center justify-center mb-6"
-                style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}
-              >
-                <FeatherIcon name="package" size={48} color="#10b981" />
+                <View className="items-end">
+                  <Text className="text-green-600 text-lg font-black">+{investment.returnPercentage}%</Text>
+                  <Text className="text-gray-500 text-xs">Total Return</Text>
+                </View>
               </View>
-              <Text className="text-gray-900 text-2xl font-black mb-2">
-                No Investments Found
-              </Text>
-              <Text className="text-gray-500 text-base text-center mb-8 px-8">
-                You don't have any {selectedTab === 'all' ? '' : selectedTab} investments yet. 
-                Start investing in commodities to build your portfolio.
-              </Text>
-              <TouchableOpacity
-                className="rounded-2xl px-8 py-4 shadow-lg"
-                style={{
-                  backgroundColor: '#059669',
-                  shadowColor: '#059669',
-                  shadowOffset: { width: 0, height: 8 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 20,
-                  elevation: 12,
-                }}
-                activeOpacity={0.8}
-              >
-                <View className="flex-row items-center">
-                  <FeatherIcon name="shopping-cart" size={20} color="white" />
-                  <Text className="text-white text-lg font-black ml-2">
-                    Browse Commodities
+              
+              <View className="border-t border-gray-100 pt-4">
+                <View className="flex-row justify-between mb-2">
+                  <Text className="text-gray-500 text-sm">Invested</Text>
+                  <Text className="text-gray-900 font-bold text-sm">₹{investment.investedAmount.toLocaleString()}</Text>
+                </View>
+                <View className="flex-row justify-between mb-2">
+                  <Text className="text-gray-500 text-sm">Current Value</Text>
+                  <Text className="text-gray-900 font-bold text-sm">₹{investment.currentValue.toLocaleString()}</Text>
+                </View>
+                <View className="flex-row justify-between mb-2">
+                  <Text className="text-gray-500 text-sm">Returns</Text>
+                  <Text className="text-green-600 font-bold text-sm">+₹{investment.totalReturns.toLocaleString()}</Text>
+                </View>
+                <View className="flex-row justify-between mb-4">
+                  <Text className="text-gray-500 text-sm">
+                    {investment.status === 'active' ? 'Days Left' : 'Invested On'}
+                  </Text>
+                  <Text className="text-gray-900 font-bold text-sm">
+                    {investment.status === 'active' ? `${investment.daysLeft} days` : formatDate(investment.investmentDate)}
                   </Text>
                 </View>
-              </TouchableOpacity>
+                
+                {investment.status === 'active' && (
+                  <TouchableOpacity 
+                    className="bg-red-600 py-3 rounded-2xl"
+                    activeOpacity={0.8}
+                    onPress={() => handleCashOut(investment)}
+                  >
+                    <Text className="text-white text-center font-black text-sm">
+                      Cash Out Early (38% penalty)
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </TouchableOpacity>
+          ))}
+          
+          {filteredInvestments.length === 0 && !loading && !error && (
+            <View className="items-center py-20">
+              <Text className="text-gray-500 text-lg">No investments found</Text>
+              <Text className="text-gray-400 text-sm mt-2">
+                {selectedTab === 'all' ? 'Start investing to see your portfolio here' : `No ${selectedTab} investments`}
+              </Text>
             </View>
           )}
         </View>
+        
+        <View className="h-20" />
       </ScrollView>
     </SafeAreaView>
   );

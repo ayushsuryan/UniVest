@@ -1,8 +1,9 @@
 import React, {useState, useEffect} from 'react';
-import {View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl} from 'react-native';
+import {View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl, Modal, TextInput, Alert} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import AssetService from '../../connections/assets';
+import InvestmentService from '../../connections/investments';
 
 interface Asset {
   _id: string;
@@ -24,6 +25,13 @@ const Assets: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Investment modal states
+  const [investmentModalVisible, setInvestmentModalVisible] = useState(false);
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [investmentAmount, setInvestmentAmount] = useState('');
+  const [investmentLoading, setInvestmentLoading] = useState(false);
+  const [userBalance, setUserBalance] = useState(1000); // Will be fetched from API
 
   // Load assets from API
   const loadAssets = async (showRefreshIndicator = false) => {
@@ -67,14 +75,87 @@ const Assets: React.FC = () => {
     }
   };
 
+  // Load user balance
+  const loadUserBalance = async () => {
+    try {
+      const response = await InvestmentService.getPortfolioStats();
+      if (response.success) {
+        setUserBalance(response.data.balance);
+      }
+    } catch (error) {
+      console.error('Error loading user balance:', error);
+    }
+  };
+
   // Load assets on component mount and filter change
   useEffect(() => {
     loadAssets();
+    loadUserBalance();
   }, [selectedFilter]);
 
   // Pull to refresh
   const onRefresh = () => {
     loadAssets(true);
+    loadUserBalance();
+  };
+
+  // Handle invest button press
+  const handleInvestPress = (asset: Asset) => {
+    setSelectedAsset(asset);
+    setInvestmentAmount(asset.minInvestment.toString());
+    setInvestmentModalVisible(true);
+  };
+
+  // Handle investment submission
+  const handleInvestment = async () => {
+    if (!selectedAsset || !investmentAmount) {
+      Alert.alert('Error', 'Please enter a valid investment amount');
+      return;
+    }
+
+    const amount = parseFloat(investmentAmount);
+    
+    if (isNaN(amount) || amount <= 0) {
+      Alert.alert('Error', 'Please enter a valid investment amount');
+      return;
+    }
+
+    if (amount < selectedAsset.minInvestment) {
+      Alert.alert('Error', `Minimum investment amount is ₹${selectedAsset.minInvestment}`);
+      return;
+    }
+
+    if (amount > userBalance) {
+      Alert.alert('Error', 'Insufficient balance');
+      return;
+    }
+
+    try {
+      setInvestmentLoading(true);
+      
+      const response = await InvestmentService.createInvestment(selectedAsset._id, amount);
+      
+      if (response.success) {
+        Alert.alert('Success', 'Investment created successfully!', [
+          {
+            text: 'OK',
+            onPress: () => {
+              setInvestmentModalVisible(false);
+              setInvestmentAmount('');
+              setSelectedAsset(null);
+              loadUserBalance(); // Refresh balance
+            }
+          }
+        ]);
+      } else {
+        Alert.alert('Error', response.message || 'Failed to create investment');
+      }
+    } catch (error) {
+      console.error('Investment error:', error);
+      Alert.alert('Error', 'Failed to create investment. Please try again.');
+    } finally {
+      setInvestmentLoading(false);
+    }
   };
 
   // Filter assets based on selected filter
@@ -169,13 +250,19 @@ const Assets: React.FC = () => {
               Invest in high-demand products
             </Text>
           </View>
-          <TouchableOpacity
-            className="rounded-2xl p-3 bg-white shadow-sm border border-gray-100"
-            activeOpacity={0.8}
-            onPress={onRefresh}
-          >
-            <FeatherIcon name="refresh-cw" size={24} color="#059669" />
-          </TouchableOpacity>
+          <View className="flex-row items-center">
+            <View className="mr-4">
+              <Text className="text-gray-500 text-xs">Balance</Text>
+              <Text className="text-green-600 text-lg font-black">₹{userBalance.toLocaleString()}</Text>
+            </View>
+            <TouchableOpacity
+              className="rounded-2xl p-3 bg-white shadow-sm border border-gray-100"
+              activeOpacity={0.8}
+              onPress={onRefresh}
+            >
+              <FeatherIcon name="refresh-cw" size={24} color="#059669" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Market Overview Card */}
@@ -303,6 +390,7 @@ const Assets: React.FC = () => {
               <TouchableOpacity 
                 className="bg-green-600 py-4 rounded-2xl"
                 activeOpacity={0.8}
+                onPress={() => handleInvestPress(asset)}
               >
                 <Text className="text-white text-center font-black text-base">
                   Invest Now
@@ -321,6 +409,85 @@ const Assets: React.FC = () => {
         
         <View className="h-20" />
       </ScrollView>
+
+      {/* Investment Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={investmentModalVisible}
+        onRequestClose={() => setInvestmentModalVisible(false)}
+      >
+        <View className="flex-1 justify-end bg-black bg-opacity-50">
+          <View className="bg-white rounded-t-3xl p-6">
+            <View className="flex-row items-center justify-between mb-6">
+              <Text className="text-gray-900 text-xl font-black">Invest in {selectedAsset?.name}</Text>
+              <TouchableOpacity
+                onPress={() => setInvestmentModalVisible(false)}
+                className="p-2"
+              >
+                <FeatherIcon name="x" size={24} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
+
+            {selectedAsset && (
+              <View className="mb-6">
+                <View className="flex-row items-center mb-4">
+                  <Image
+                    source={{ uri: selectedAsset.image }}
+                    className="w-12 h-12 rounded-xl mr-3"
+                  />
+                  <View className="flex-1">
+                    <Text className="text-gray-900 font-bold">{selectedAsset.name}</Text>
+                    <Text className="text-green-600 font-bold">+{selectedAsset.hourlyReturnPercentage}% hourly</Text>
+                  </View>
+                </View>
+
+                <View className="bg-gray-50 rounded-2xl p-4 mb-4">
+                  <View className="flex-row justify-between mb-2">
+                    <Text className="text-gray-600">Min. Investment</Text>
+                    <Text className="text-gray-900 font-bold">₹{selectedAsset.minInvestment.toLocaleString()}</Text>
+                  </View>
+                  <View className="flex-row justify-between mb-2">
+                    <Text className="text-gray-600">Maturity Period</Text>
+                    <Text className="text-gray-900 font-bold">{selectedAsset.maturityPeriod}</Text>
+                  </View>
+                  <View className="flex-row justify-between">
+                    <Text className="text-gray-600">Your Balance</Text>
+                    <Text className="text-green-600 font-bold">₹{userBalance.toLocaleString()}</Text>
+                  </View>
+                </View>
+
+                <View className="mb-6">
+                  <Text className="text-gray-900 font-bold mb-2">Investment Amount</Text>
+                  <TextInput
+                    className="border border-gray-300 rounded-2xl px-4 py-3 text-lg font-bold"
+                    placeholder={`Min. ₹${selectedAsset.minInvestment}`}
+                    value={investmentAmount}
+                    onChangeText={setInvestmentAmount}
+                    keyboardType="numeric"
+                    editable={!investmentLoading}
+                  />
+                </View>
+
+                <TouchableOpacity
+                  className={`py-4 rounded-2xl ${investmentLoading ? 'bg-gray-400' : 'bg-green-600'}`}
+                  onPress={handleInvestment}
+                  disabled={investmentLoading}
+                  activeOpacity={0.8}
+                >
+                  {investmentLoading ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <Text className="text-white text-center font-black text-base">
+                      Confirm Investment
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };

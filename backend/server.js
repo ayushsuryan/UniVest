@@ -7,6 +7,7 @@ require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
 const assetRoutes = require('./routes/assets');
+const investmentRoutes = require('./routes/investments');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -46,6 +47,7 @@ mongoose.connect(process.env.MONGODB_URI, {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/assets', assetRoutes);
+app.use('/api/investments', investmentRoutes);
 
 // Health check endpoint
 app.get('/ayush/health', (req, res) => {

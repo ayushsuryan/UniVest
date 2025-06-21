@@ -36,6 +36,11 @@ const userSchema = new mongoose.Schema({
     trim: true,
     match: [/^\+?[\d\s-()]+$/, 'Please enter a valid phone number']
   },
+  balance: {
+    type: Number,
+    default: 1000,
+    min: [0, 'Balance cannot be negative']
+  },
   isEmailVerified: {
     type: Boolean,
     default: false
