@@ -2,13 +2,43 @@ const nodemailer = require('nodemailer');
 
 class EmailService {
   constructor() {
-    this.transporter = nodemailer.createTransport({
+    // Primary Gmail configuration
+    this.primaryTransporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
+      },
+      // Add timeout and connection settings
+      pool: true,
+      maxConnections: 1,
+      maxMessages: 10,
+      connectionTimeout: 30000, // 30 seconds (reduced)
+      greetingTimeout: 15000,   // 15 seconds (reduced)
+      socketTimeout: 30000,     // 30 seconds (reduced)
+      secure: true,
+      requireTLS: true
+    });
+
+    // Fallback configuration using direct SMTP
+    this.fallbackTransporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false, // true for 465, false for other ports
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      },
+      connectionTimeout: 30000,
+      greetingTimeout: 15000,
+      socketTimeout: 30000,
+      tls: {
+        rejectUnauthorized: false
       }
     });
+
+    // Use primary by default
+    this.transporter = this.primaryTransporter;
   }
 
   // Verify email configuration
@@ -20,6 +50,30 @@ class EmailService {
     } catch (error) {
       console.error('Email service configuration error:', error);
       return false;
+    }
+  }
+
+  // Try sending with fallback
+  async sendEmailWithFallback(mailOptions) {
+    try {
+      // Try primary transporter first
+      const info = await this.primaryTransporter.sendMail(mailOptions);
+      console.log('✅ Email sent via primary transporter:', info.messageId);
+      return { success: true, messageId: info.messageId, method: 'primary' };
+    } catch (primaryError) {
+      console.log('⚠️ Primary email failed, trying fallback:', primaryError.message);
+      
+      try {
+        // Try fallback transporter
+        const info = await this.fallbackTransporter.sendMail(mailOptions);
+        console.log('✅ Email sent via fallback transporter:', info.messageId);
+        return { success: true, messageId: info.messageId, method: 'fallback' };
+      } catch (fallbackError) {
+        console.error('❌ Both email methods failed');
+        console.error('Primary error:', primaryError.message);
+        console.error('Fallback error:', fallbackError.message);
+        throw new Error(`Email service unavailable: ${fallbackError.message}`);
+      }
     }
   }
 
@@ -36,14 +90,15 @@ class EmailService {
     };
 
     try {
-      const info = await this.transporter.sendMail(mailOptions);
-      console.log('OTP email sent successfully:', info.messageId);
+      const result = await this.sendEmailWithFallback(mailOptions);
+      console.log(`📧 OTP email sent successfully via ${result.method}:`, result.messageId);
       return {
         success: true,
-        messageId: info.messageId
+        messageId: result.messageId,
+        method: result.method
       };
     } catch (error) {
-      console.error('Error sending OTP email:', error);
+      console.error('❌ Failed to send OTP email:', error.message);
       throw new Error('Failed to send OTP email');
     }
   }

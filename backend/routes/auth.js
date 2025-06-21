@@ -77,18 +77,24 @@ router.post('/register', authLimiter, validateRegistration, asyncHandler(async (
     console.log(`📧 OTP generated for email: ${email}`);
 
     // Send verification email
+    let emailSent = false;
     try {
       await emailService.sendOTP(email, otp, 'email_verification');
       console.log(`📬 Verification email sent to: ${email}`);
+      emailSent = true;
     } catch (error) {
       console.error('Failed to send verification email:', error);
       // Don't fail registration if email fails - just log it
+      emailSent = false;
     }
 
     const response = {
       success: true,
-      message: 'User registered successfully. Please check your email for verification code.',
-      user: user.getPublicProfile()
+      message: emailSent 
+        ? 'User registered successfully. Please check your email for verification code.'
+        : 'User registered successfully. Email service is temporarily unavailable, but you can still verify your account.',
+      user: user.getPublicProfile(),
+      emailSent: emailSent
     };
     
     console.log(`🎉 Registration successful for: ${email}`);
@@ -422,6 +428,47 @@ router.delete('/account', protect, asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     message: 'Account deactivated successfully'
+  });
+}));
+
+// @desc    Get OTP for debugging (temporary - remove in production)
+// @route   GET /api/auth/debug/otp/:email
+// @access  Public (only in development)
+router.get('/debug/otp/:email', asyncHandler(async (req, res) => {
+  // Only allow in development environment
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({
+      success: false,
+      message: 'Endpoint not available in production'
+    });
+  }
+
+  const { email } = req.params;
+  
+  // Find the latest OTP for this email
+  const otpRecord = await OTP.findOne({
+    email: email.toLowerCase(),
+    type: 'email_verification',
+    isUsed: false,
+    expiresAt: { $gt: new Date() }
+  }).sort({ createdAt: -1 });
+
+  if (!otpRecord) {
+    return res.status(404).json({
+      success: false,
+      message: 'No valid OTP found for this email'
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    message: 'OTP retrieved successfully (development only)',
+    data: {
+      email: otpRecord.email,
+      otp: otpRecord.otp,
+      expiresAt: otpRecord.expiresAt,
+      type: otpRecord.type
+    }
   });
 }));
 

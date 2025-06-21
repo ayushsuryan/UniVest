@@ -181,38 +181,11 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({navigation, route}) =>
                 <Text className="text-emerald-700 font-medium">{maskedEmail}</Text>
               </View>
             )}
-            {phoneNumber && (
-              <View className="flex-row items-center">
-                <View
-                  className="rounded-xl p-2 mr-3"
-                  style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}
-                >
-                  <FeatherIcon name="smartphone" size={16} color="#059669" />
-                </View>
-                <Text className="text-emerald-700 font-medium">{maskedPhone}</Text>
-              </View>
-            )}
+          
           </View>
         </View>
 
-        {/* Demo OTP Info */}
-        <View 
-          className="rounded-2xl p-4 mb-8 border border-blue-100 shadow-sm"
-          style={{ backgroundColor: 'rgba(59, 130, 246, 0.05)' }}
-        >
-          <View className="flex-row items-center mb-2">
-            <View
-              className="rounded-xl p-2 mr-3"
-              style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }}
-            >
-              <FeatherIcon name="info" size={16} color="#2563eb" />
-            </View>
-            <Text className="text-blue-800 font-bold text-sm">Demo Mode</Text>
-          </View>
-          <Text className="text-blue-700 text-xs">
-            For testing purposes, use OTP: <Text className="font-bold">123456</Text>
-          </Text>
-        </View>
+      
 
         {/* OTP Input */}
         <View className="mb-8">
