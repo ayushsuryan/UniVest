@@ -62,8 +62,9 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({navigation, route}) =>
         // Small delay to show toast before navigation
         setTimeout(() => {
           if (fromScreen === 'signup') {
-            // For signup, navigate to login after successful verification
-            navigation.navigate('Login');
+            // For signup, after successful verification, the user is now authenticated
+            // The App component will automatically handle navigation to Dashboard
+            // No manual navigation needed
           } else if (fromScreen === 'login') {
             // For login, the App component will handle automatic navigation to Dashboard
             // since the user is already authenticated and email is now verified
@@ -199,7 +200,7 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({navigation, route}) =>
                 ref={(ref) => {
                   inputRefs.current[index] = ref;
                 }}
-                className="w-12 h-14 text-center text-xl font-bold rounded-xl border-2 border-gray-300 bg-white"
+                className="w-12 h-14 mx-2 text-center text-xl font-bold rounded-xl border-2 border-gray-300 bg-white"
                 style={{
                   borderColor: digit ? '#059669' : '#d1d5db',
                   backgroundColor: digit ? 'rgba(16, 185, 129, 0.05)' : 'white',
