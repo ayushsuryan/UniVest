@@ -241,9 +241,11 @@ const MyAssets: React.FC = () => {
             <View className="flex-row items-center justify-between mb-4">
               <Text className="text-gray-600 text-base font-medium">Portfolio Value</Text>
               <View className="flex-row items-center">
-                <FeatherIcon name="trending-up" size={16} color="#10b981" />
-                <Text className="text-green-600 text-sm font-bold ml-1">
-                  +{getReturnPercentage(portfolioStats.totalInvested, portfolioStats.totalReturns)}%
+                <FeatherIcon name={portfolioStats.totalReturns >= 0 ? "trending-up" : "trending-down"} size={16} color={portfolioStats.totalReturns >= 0 ? "#10b981" : "#ef4444"} />
+                <Text className={`text-sm font-bold ml-1 ${
+                  portfolioStats.totalReturns >= 0 ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {portfolioStats.totalReturns >= 0 ? '+' : ''}{getReturnPercentage(portfolioStats.totalInvested, portfolioStats.totalReturns)}%
                 </Text>
               </View>
             </View>
@@ -257,7 +259,11 @@ const MyAssets: React.FC = () => {
               </View>
               <View>
                 <Text className="text-gray-500 text-sm">Returns</Text>
-                <Text className="text-green-600 text-xl font-black">+₹{portfolioStats.totalReturns.toLocaleString()}</Text>
+                <Text className={`text-xl font-black ${
+                  portfolioStats.totalReturns >= 0 ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {portfolioStats.totalReturns >= 0 ? '+' : ''}₹{Math.abs(portfolioStats.totalReturns).toLocaleString()}
+                </Text>
               </View>
               <View>
                 <Text className="text-gray-500 text-sm">Active</Text>
@@ -377,7 +383,11 @@ const MyAssets: React.FC = () => {
                   </View>
                 </View>
                 <View className="items-end">
-                  <Text className="text-green-600 text-lg font-black">+{investment.returnPercentage}%</Text>
+                  <Text className={`text-lg font-black ${
+                    investment.totalReturns >= 0 ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {investment.totalReturns >= 0 ? '+' : ''}{investment.returnPercentage}%
+                  </Text>
                   <Text className="text-gray-500 text-xs">Total Return</Text>
                 </View>
               </View>
@@ -393,7 +403,11 @@ const MyAssets: React.FC = () => {
                 </View>
                 <View className="flex-row justify-between mb-2">
                   <Text className="text-gray-500 text-sm">Returns</Text>
-                  <Text className="text-green-600 font-bold text-sm">+₹{investment.totalReturns.toLocaleString()}</Text>
+                  <Text className={`font-bold text-sm ${
+                    investment.totalReturns >= 0 ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {investment.totalReturns >= 0 ? '+' : ''}₹{Math.abs(investment.totalReturns).toLocaleString()}
+                  </Text>
                 </View>
                 <View className="flex-row justify-between mb-4">
                   <Text className="text-gray-500 text-sm">

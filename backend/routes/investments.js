@@ -197,6 +197,8 @@ router.post('/:id/cash-out', protect, asyncHandler(async (req, res) => {
 
   // Update investment
   investment.status = 'cashed_out';
+  investment.currentValue = finalAmount;
+  investment.totalReturns = finalAmount - investment.investedAmount;
   investment.cashOutDetails = {
     cashOutDate: new Date(),
     penaltyAmount,

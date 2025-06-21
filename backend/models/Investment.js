@@ -86,16 +86,33 @@ investmentSchema.statics.getUserInvestments = function(userId, status = null) {
 investmentSchema.statics.getUserPortfolioStats = async function(userId) {
   const investments = await this.find({ user: userId });
   
+  // Separate active/matured investments from cashed-out ones
+  const activeInvestments = investments.filter(inv => inv.status === 'active' || inv.status === 'matured');
+  const cashedOutInvestments = investments.filter(inv => inv.status === 'cashed_out');
+  
+  // Calculate totals for active/matured investments only
   const totalInvested = investments.reduce((sum, inv) => sum + inv.investedAmount, 0);
-  const totalCurrentValue = investments.reduce((sum, inv) => sum + inv.currentValue, 0);
-  const totalReturns = totalCurrentValue - totalInvested;
-  const activeInvestments = investments.filter(inv => inv.status === 'active').length;
+  const totalCurrentValue = activeInvestments.reduce((sum, inv) => sum + inv.currentValue, 0);
+  
+  // For cashed-out investments, calculate the loss due to penalty
+  const cashedOutLoss = cashedOutInvestments.reduce((sum, inv) => {
+    if (inv.cashOutDetails) {
+      // Loss is the difference between what was invested and what was received
+      return sum + (inv.investedAmount - inv.cashOutDetails.finalAmount);
+    }
+    return sum + (inv.investedAmount * 0.38); // Default 38% penalty if no cashOutDetails
+  }, 0);
+  
+  // Total returns = current gains from active investments - losses from cashed-out investments
+  const activeReturns = totalCurrentValue - activeInvestments.reduce((sum, inv) => sum + inv.investedAmount, 0);
+  const totalReturns = activeReturns - cashedOutLoss;
+  const activeInvestmentsCount = investments.filter(inv => inv.status === 'active').length;
   
   return {
     totalInvested,
     totalCurrentValue,
     totalReturns,
-    activeInvestments,
+    activeInvestments: activeInvestmentsCount,
     totalInvestments: investments.length
   };
 };
