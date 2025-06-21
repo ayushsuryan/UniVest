@@ -235,21 +235,25 @@ const Landing: React.FC<LandingProps> = ({ navigation }) => {
                   className="w-20 h-20 rounded-2xl items-center justify-center"
                   style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}
                 >
-                  <FeatherIcon name="package" size={40} color="#059669" />
+                  <Image
+                    source={require('../../assets/app_logo_png.png')}
+                    style={{ width: 40, height: 40 }}
+                    resizeMode="contain"
+                  />
                 </View>
               </View>
             </Animated.View>
 
             <View className="items-center mb-10">
               <Text className="text-gray-800 text-4xl font-black text-center mb-3">
-                Commodity<Text className="text-emerald-600">Invest</Text>
+                <Text className="text-emerald-600">Hourly Club</Text>
               </Text>
               <View
                 className="rounded-full px-6 py-3 border border-emerald-200"
                 style={{ backgroundColor: 'rgba(16, 185, 129, 0.08)' }}
               >
                 <Text className="text-emerald-700 text-lg font-bold text-center">
-                  📦 Smart Commodity Trading 📦
+                  ⏰ Hourly Returns Trading ⏰
                 </Text>
               </View>
             </View>

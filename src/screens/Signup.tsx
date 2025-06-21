@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {View, Text, TouchableOpacity, ScrollView} from 'react-native';
+import {View, Text, TouchableOpacity, ScrollView, Image} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import CustomInput from '../Components/CustomInput';
@@ -136,7 +136,11 @@ const Signup: React.FC<SignupProps> = ({navigation}) => {
               className="w-20 h-20 rounded-3xl items-center justify-center shadow-lg"
               style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}
             >
-              <FeatherIcon name="user-plus" size={40} color="#059669" />
+              <Image
+                source={require('../../assets/app_logo_png.png')}
+                style={{ width: 40, height: 40 }}
+                resizeMode="contain"
+              />
             </View>
           </View>
           
@@ -144,7 +148,7 @@ const Signup: React.FC<SignupProps> = ({navigation}) => {
             Create Account
           </Text>
           <Text className="text-gray-600 text-sm text-center leading-5">
-            Join WealthBuilder and start your
+            Join Hourly Club and start your
           </Text>
           <Text className="text-gray-600 text-sm text-center">
             journey to financial freedom

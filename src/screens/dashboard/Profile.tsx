@@ -189,7 +189,7 @@ const Profile: React.FC = () => {
                   {user ? `${user.firstName} ${user.lastName}` : 'Commodity Trader'}
                 </Text>
                 <Text className="text-gray-500 text-base">
-                  {user?.email || 'trader@commodityinvest.com'}
+                  {user?.email || 'trader@hourlyclub.com'}
                 </Text>
                 <View className="flex-row items-center mt-2">
                   <View className={`w-3 h-3 ${user?.isEmailVerified ? 'bg-green-500' : 'bg-yellow-500'} rounded-full mr-2`} />
@@ -355,7 +355,7 @@ const Profile: React.FC = () => {
           
           <View className="mt-6 items-center">
             <Text className="text-gray-400 text-sm text-center">
-              WealthBuilder v2.1.0
+              Hourly Club v2.1.0
             </Text>
             <Text className="text-gray-400 text-xs text-center mt-1">
               Your investments are secured with bank-level encryption

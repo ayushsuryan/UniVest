@@ -1,5 +1,5 @@
-import React, { ReactNode } from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
+import React, { ReactNode, useEffect } from 'react';
+import { View, Text, ActivityIndicator, Image } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 
@@ -36,11 +36,15 @@ const AuthLoadingScreen: React.FC = () => (
         className="w-20 h-20 rounded-3xl items-center justify-center mb-6 shadow-lg"
         style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}
       >
-        <FeatherIcon name="trending-up" size={40} color="#059669" />
+        <Image
+          source={require('../../assets/app_logo_png.png')}
+          style={{ width: 40, height: 40 }}
+          resizeMode="contain"
+        />
       </View>
       
       <Text className="text-gray-900 text-2xl font-black mb-2">
-        WealthBuilder
+        Hourly Club
       </Text>
       
       <Text className="text-gray-600 text-base mb-8">

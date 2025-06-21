@@ -1,5 +1,5 @@
 import React, {useState, useEffect, useRef} from 'react';
-import {View, Text, TouchableOpacity, TextInput} from 'react-native';
+import {View, Text, TouchableOpacity, TextInput, Image} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import { useAuth } from '../context/AuthContext';
@@ -148,7 +148,11 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({navigation, route}) =>
               className="w-24 h-24 rounded-3xl items-center justify-center shadow-lg"
               style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}
             >
-              <FeatherIcon name="shield-check" size={48} color="#059669" />
+              <Image
+                source={require('../../assets/app_logo_png.png')}
+                style={{ width: 48, height: 48 }}
+                resizeMode="contain"
+              />
             </View>
           </View>
           

@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {View, Text, TouchableOpacity, ScrollView} from 'react-native';
+import {View, Text, TouchableOpacity, ScrollView, Image} from 'react-native';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import CustomInput from '../Components/CustomInput';
 import { useAuth } from '../context/AuthContext';
@@ -17,7 +17,7 @@ const Login: React.FC<LoginProps> = ({navigation}) => {
   const { login, isLoading } = useAuth();
 
   const setTestCredentials = () => {
-    setEmail('investor@wealthbuilder.com');
+    setEmail('investor@hourlyclub.com');
     setPassword('invest123');
   };
 
@@ -95,7 +95,11 @@ const Login: React.FC<LoginProps> = ({navigation}) => {
               className="w-24 h-24 rounded-3xl items-center justify-center shadow-lg"
               style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}
             >
-              <FeatherIcon name="trending-up" size={48} color="#059669" />
+              <Image
+                source={require('../../assets/app_logo_png.png')}
+                style={{ width: 48, height: 48 }}
+                resizeMode="contain"
+              />
             </View>
           </View>
           
@@ -103,7 +107,7 @@ const Login: React.FC<LoginProps> = ({navigation}) => {
             Welcome Back
           </Text>
           <Text className="text-gray-600 text-base text-center leading-6">
-            Sign in to your WealthBuilder account and
+            Sign in to your Hourly Club account and
           </Text>
           <Text className="text-gray-600 text-base text-center">
             continue building your wealth
