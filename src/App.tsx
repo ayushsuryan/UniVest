@@ -10,6 +10,7 @@ import Signup from './screens/Signup';
 import OTPVerification from './screens/OTPVerification';
 import ResetPassword from './screens/ResetPassword';
 import Dashboard from './screens/Dashboard';
+import Notifications from './screens/dashboard/Notifications';
 
 // Define navigation types
 type RootStackParamList = {
@@ -27,6 +28,7 @@ type RootStackParamList = {
     verified?: boolean;
   };
   Dashboard: undefined;
+  Notifications: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -45,6 +47,7 @@ const AppNavigation = () => {
         <Stack.Screen name="OTPVerification" component={OTPVerification} />
         <Stack.Screen name="ResetPassword" component={ResetPassword} />
         <Stack.Screen name="Dashboard" component={Dashboard} />
+        <Stack.Screen name="Notifications" component={Notifications} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -1,8 +1,46 @@
-import React, {useState} from 'react';
-import {View, Text, ScrollView, TouchableOpacity, Image} from 'react-native';
+import React, {useState, useEffect} from 'react';
+import {View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl, Modal, TextInput, Alert} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigation } from '@react-navigation/native';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { CompositeNavigationProp } from '@react-navigation/native';
+import InvestmentService from '../../connections/investments';
+
+// Define tab navigator param list
+type TabParamList = {
+  Home: undefined;
+  Assets: undefined;
+  My: undefined;
+  Profile: undefined;
+};
+
+// Define stack navigator param list (parent)
+type StackParamList = {
+  Landing: undefined;
+  Login: undefined;
+  Signup: undefined;
+  OTPVerification: {
+    email: string;
+    phoneNumber?: string;
+    fromScreen: string;
+  };
+  ResetPassword: {
+    email?: string;
+    phoneNumber?: string;
+    verified?: boolean;
+  };
+  Dashboard: undefined;
+  Notifications: undefined;
+};
+
+// Composite navigation type for accessing both tab and stack navigators
+type HomeNavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<TabParamList, 'Home'>,
+  StackNavigationProp<StackParamList>
+>;
 
 interface Investment {
   id: string;
@@ -16,15 +54,40 @@ interface Investment {
   image: string;
 }
 
+interface PortfolioStats {
+  totalInvested: number;
+  totalCurrentValue: number;
+  totalReturns: number;
+  activeInvestments: number;
+  totalInvestments: number;
+  balance: number;
+}
+
 const Home: React.FC = () => {
-  const [walletBalance] = useState(45750);
-  const [totalInvested] = useState(125000);
-  const [totalReturns] = useState(18500);
-  const [activeInvestments] = useState(6);
+  const [portfolioStats, setPortfolioStats] = useState<PortfolioStats>({
+    totalInvested: 0,
+    totalCurrentValue: 0,
+    totalReturns: 0,
+    activeInvestments: 0,
+    totalInvestments: 0,
+    balance: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Modal states
+  const [depositModalVisible, setDepositModalVisible] = useState(false);
+  const [withdrawModalVisible, setWithdrawModalVisible] = useState(false);
+  const [depositAmount, setDepositAmount] = useState('');
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [transactionLoading, setTransactionLoading] = useState(false);
 
   // Get user data from AuthContext
   const { user } = useAuth();
+  const navigation = useNavigation<HomeNavigationProp>();
 
+  // Mock recent investments data (keeping as requested)
   const recentInvestments: Investment[] = [
     {
       id: '1',
@@ -71,6 +134,132 @@ const Home: React.FC = () => {
       image: 'https://picsum.photos/200/200?random=10',
     },
   ];
+
+  // Load portfolio stats from API
+  const loadPortfolioStats = async (showRefreshIndicator = false) => {
+    try {
+      if (showRefreshIndicator) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+
+      const response = await InvestmentService.getPortfolioStats();
+      
+      if (response.success) {
+        setPortfolioStats(response.data);
+      } else {
+        setError(response.message);
+      }
+    } catch (error) {
+      console.error('Error loading portfolio stats:', error);
+      setError('Failed to load portfolio data. Please try again.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  // Load data on component mount
+  useEffect(() => {
+    loadPortfolioStats();
+  }, []);
+
+  // Pull to refresh
+  const onRefresh = () => {
+    loadPortfolioStats(true);
+  };
+
+  // Handle quick action press
+  const handleQuickAction = (actionId: string) => {
+    switch (actionId) {
+      case '1': // Deposit
+        setDepositModalVisible(true);
+        break;
+      case '2': // Withdraw
+        setWithdrawModalVisible(true);
+        break;
+      case '3': // Invest
+        navigation.navigate('Assets');
+        break;
+      case '4': // History
+        navigation.navigate('My');
+        break;
+      default:
+        break;
+    }
+  };
+
+  // Handle deposit
+  const handleDeposit = async () => {
+    if (!depositAmount || parseFloat(depositAmount) <= 0) {
+      Alert.alert('Error', 'Please enter a valid deposit amount');
+      return;
+    }
+
+    try {
+      setTransactionLoading(true);
+      // Mock deposit API call - replace with actual API
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      Alert.alert('Success', `₹${parseFloat(depositAmount).toLocaleString()} deposited successfully!`, [
+        {
+          text: 'OK',
+          onPress: () => {
+            setDepositModalVisible(false);
+            setDepositAmount('');
+            loadPortfolioStats(); // Refresh data
+          }
+        }
+      ]);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to process deposit. Please try again.');
+    } finally {
+      setTransactionLoading(false);
+    }
+  };
+
+  // Handle withdrawal
+  const handleWithdraw = async () => {
+    const amount = parseFloat(withdrawAmount);
+    
+    if (!withdrawAmount || amount <= 0) {
+      Alert.alert('Error', 'Please enter a valid withdrawal amount');
+      return;
+    }
+
+    if (amount > portfolioStats.balance) {
+      Alert.alert('Error', 'Insufficient balance');
+      return;
+    }
+
+    try {
+      setTransactionLoading(true);
+      // Mock withdrawal API call - replace with actual API
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      Alert.alert('Success', `₹${amount.toLocaleString()} withdrawal initiated!`, [
+        {
+          text: 'OK',
+          onPress: () => {
+            setWithdrawModalVisible(false);
+            setWithdrawAmount('');
+            loadPortfolioStats(); // Refresh data
+          }
+        }
+      ]);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to process withdrawal. Please try again.');
+    } finally {
+      setTransactionLoading(false);
+    }
+  };
+
+  // Handle notifications navigation
+  const handleNotificationsPress = () => {
+    navigation.navigate('Notifications');
+  };
 
   const quickActions = [
     {
@@ -125,6 +314,15 @@ const Home: React.FC = () => {
     }
   };
 
+  if (loading && !refreshing) {
+    return (
+      <SafeAreaView className="flex-1  justify-center items-center" style={{ backgroundColor: '#f8fafc' }}>
+        <ActivityIndicator size="large" color="#059669" />
+        <Text className="text-gray-600 mt-4">Loading portfolio...</Text>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: '#f8fafc' }}>
       {/* Decorative Background */}
@@ -143,7 +341,13 @@ const Home: React.FC = () => {
         />
       </View>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        className="flex-1" 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         {/* Header */}
         <View className="px-6 pt-8 pb-6">
           <View className="flex-row items-center justify-between mb-8">
@@ -156,10 +360,24 @@ const Home: React.FC = () => {
             <TouchableOpacity
               className="rounded-2xl p-3 bg-white shadow-sm border border-gray-100"
               activeOpacity={0.8}
+              onPress={handleNotificationsPress}
             >
               <FeatherIcon name="bell" size={24} color="#059669" />
             </TouchableOpacity>
           </View>
+
+          {/* Error Message */}
+          {error && (
+            <View className="mb-4 p-4 bg-red-50 rounded-2xl border border-red-200">
+              <Text className="text-red-600 text-center">{error}</Text>
+              <TouchableOpacity 
+                onPress={() => loadPortfolioStats()}
+                className="mt-2 py-2 px-4 bg-red-600 rounded-xl self-center"
+              >
+                <Text className="text-white font-bold">Retry</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {/* Wallet Balance Card */}
           <View className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100 mb-6">
@@ -171,13 +389,13 @@ const Home: React.FC = () => {
               </View>
             </View>
             <Text className="text-gray-900 text-4xl font-black mb-6">
-              ₹{walletBalance.toLocaleString()}
+              ₹{portfolioStats.balance.toLocaleString()}
             </Text>
             <View className="flex-row space-x-4">
               <TouchableOpacity
-                className="flex-1 rounded-2xl p-4 shadow-lg"
+                className="flex-1 bg-green-600 rounded-2xl p-3 mx-2 shadow-lg"
                 style={{
-                  backgroundColor: '#059669',
+                  
                   shadowColor: '#059669',
                   shadowOffset: { width: 0, height: 8 },
                   shadowOpacity: 0.3,
@@ -185,6 +403,7 @@ const Home: React.FC = () => {
                   elevation: 12,
                 }}
                 activeOpacity={0.8}
+                onPress={() => setDepositModalVisible(true)}
               >
                 <View className="flex-row items-center justify-center">
                   <FeatherIcon name="plus" size={20} color="white" />
@@ -192,8 +411,9 @@ const Home: React.FC = () => {
                 </View>
               </TouchableOpacity>
               <TouchableOpacity
-                className="flex-1 rounded-2xl p-4 bg-gray-100 border border-gray-200"
+                className="flex-1 rounded-2xl p-3 m bg-gray-100 border border-gray-200"
                 activeOpacity={0.8}
+                onPress={() => setWithdrawModalVisible(true)}
               >
                 <View className="flex-row items-center justify-center">
                   <FeatherIcon name="arrow-up" size={20} color="#374151" />
@@ -208,19 +428,21 @@ const Home: React.FC = () => {
             <View className="flex-1 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
               <Text className="text-gray-500 text-sm font-medium">Total Invested</Text>
               <Text className="text-gray-900 text-xl font-black">
-                ₹{totalInvested.toLocaleString()}
+                ₹{portfolioStats.totalInvested.toLocaleString()}
               </Text>
             </View>
             <View className="flex-1 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
               <Text className="text-gray-500 text-sm font-medium">Total Returns</Text>
-              <Text className="text-green-600 text-xl font-black">
-                +₹{totalReturns.toLocaleString()}
+              <Text className={`text-xl font-black ${
+                portfolioStats.totalReturns >= 0 ? 'text-green-600' : 'text-red-600'
+              }`}>
+                {portfolioStats.totalReturns >= 0 ? '+' : ''}₹{Math.abs(portfolioStats.totalReturns).toLocaleString()}
               </Text>
             </View>
             <View className="flex-1 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
               <Text className="text-gray-500 text-sm font-medium">Active</Text>
               <Text className="text-gray-900 text-xl font-black">
-                {activeInvestments}
+                {portfolioStats.activeInvestments}
               </Text>
             </View>
           </View>
@@ -235,6 +457,7 @@ const Home: React.FC = () => {
                 key={action.id}
                 className="w-[48%] bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-4"
                 activeOpacity={0.8}
+                onPress={() => handleQuickAction(action.id)}
               >
                 <View 
                   className="w-12 h-12 rounded-2xl items-center justify-center mb-3"
@@ -253,8 +476,11 @@ const Home: React.FC = () => {
         <View className="px-6 pb-24">
           <View className="flex-row items-center justify-between mb-4">
             <Text className="text-gray-900 text-xl font-black">Recent Investments</Text>
-            <TouchableOpacity activeOpacity={0.8}>
-              <Text className="text-emerald-600 text-base font-bold">View All</Text>
+            <TouchableOpacity 
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate('My')}
+            >
+              <Text className="text-green-600 text-base font-bold">View All</Text>
             </TouchableOpacity>
           </View>
 
@@ -327,6 +553,118 @@ const Home: React.FC = () => {
           </View>
         </View>
       </ScrollView>
+
+      {/* Deposit Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={depositModalVisible}
+        onRequestClose={() => setDepositModalVisible(false)}
+      >
+        <View className="flex-1 justify-end bg-black bg-opacity-50">
+          <View className="bg-white rounded-t-3xl p-6">
+            <View className="flex-row items-center justify-between mb-6">
+              <Text className="text-gray-900 text-xl font-black">Deposit Funds</Text>
+              <TouchableOpacity
+                onPress={() => setDepositModalVisible(false)}
+                className="p-2"
+              >
+                <FeatherIcon name="x" size={24} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
+
+            <View className="mb-6">
+              <View className="bg-gray-50 rounded-2xl p-4 mb-4">
+                <View className="flex-row justify-between">
+                  <Text className="text-gray-600">Current Balance</Text>
+                  <Text className="text-gray-900 font-bold">₹{portfolioStats.balance.toLocaleString()}</Text>
+                </View>
+              </View>
+
+              <Text className="text-gray-900 font-bold mb-2">Deposit Amount</Text>
+              <TextInput
+                className="border border-gray-300 rounded-2xl px-4 py-3 text-lg font-bold"
+                placeholder="Enter amount"
+                value={depositAmount}
+                onChangeText={setDepositAmount}
+                keyboardType="numeric"
+                editable={!transactionLoading}
+              />
+            </View>
+
+            <TouchableOpacity
+              className={`py-4 rounded-2xl ${transactionLoading ? 'bg-gray-400' : 'bg-green-600'}`}
+              onPress={handleDeposit}
+              disabled={transactionLoading}
+              activeOpacity={0.8}
+            >
+              {transactionLoading ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text className="text-white text-center font-black text-base">
+                  Confirm Deposit
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Withdraw Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={withdrawModalVisible}
+        onRequestClose={() => setWithdrawModalVisible(false)}
+      >
+        <View className="flex-1 justify-end bg-black bg-opacity-50">
+          <View className="bg-white rounded-t-3xl p-6">
+            <View className="flex-row items-center justify-between mb-6">
+              <Text className="text-gray-900 text-xl font-black">Withdraw Funds</Text>
+              <TouchableOpacity
+                onPress={() => setWithdrawModalVisible(false)}
+                className="p-2"
+              >
+                <FeatherIcon name="x" size={24} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
+
+            <View className="mb-6">
+              <View className="bg-gray-50 rounded-2xl p-4 mb-4">
+                <View className="flex-row justify-between">
+                  <Text className="text-gray-600">Available Balance</Text>
+                  <Text className="text-green-600 font-bold">₹{portfolioStats.balance.toLocaleString()}</Text>
+                </View>
+              </View>
+
+              <Text className="text-gray-900 font-bold mb-2">Withdrawal Amount</Text>
+              <TextInput
+                className="border border-gray-300 rounded-2xl px-4 py-3 text-lg font-bold"
+                placeholder="Enter amount"
+                value={withdrawAmount}
+                onChangeText={setWithdrawAmount}
+                keyboardType="numeric"
+                editable={!transactionLoading}
+              />
+            </View>
+
+            <TouchableOpacity
+              className={`py-4 rounded-2xl ${transactionLoading ? 'bg-gray-400' : 'bg-red-600'}`}
+              onPress={handleWithdraw}
+              disabled={transactionLoading}
+              activeOpacity={0.8}
+            >
+              {transactionLoading ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text className="text-white text-center font-black text-base">
+                  Confirm Withdrawal
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };

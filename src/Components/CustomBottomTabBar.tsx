@@ -76,14 +76,18 @@ const CustomBottomTabBar: React.FC<CustomBottomTabBarProps> = ({
     switch (routeName) {
       case 'Home':
         return 'home';
+      case 'Assets':
+        return 'trending-up';
+      case 'My':
+        return 'bar-chart-2';
+      case 'Profile':
+        return 'user';
       case 'Portfolio':
         return 'pie-chart';
       case 'Markets':
         return 'trending-up';
       case 'Investments':
         return 'bar-chart-2';
-      case 'Profile':
-        return 'user';
       default:
         return 'circle';
     }
