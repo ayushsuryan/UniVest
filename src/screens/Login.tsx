@@ -1,8 +1,9 @@
 import React, {useState} from 'react';
-import {View, Text, TouchableOpacity, Alert, ScrollView} from 'react-native';
+import {View, Text, TouchableOpacity, ScrollView} from 'react-native';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import CustomInput from '../Components/CustomInput';
 import { useAuth } from '../context/AuthContext';
+import { showToast } from '../utils/toast';
 
 interface LoginProps {
   navigation: any;
@@ -46,39 +47,24 @@ const Login: React.FC<LoginProps> = ({navigation}) => {
       const result = await login(email, password);
 
       if (result.success) {
-        Alert.alert(
-          'Login Successful!',
-          `Welcome back, ${result.user?.firstName}!`,
-          [{
-            text: 'Continue',
-            onPress: () => navigation.navigate('Dashboard')
-          }]
-        );
+        showToast.success(`Welcome back, ${result.user?.firstName}!`, 'Login Successful');
+        // Navigation will be handled automatically by App component
       } else {
         if (result.isEmailNotVerified) {
-          Alert.alert(
-            'Email Not Verified',
-            'Please verify your email address first.',
-            [
-              {
-                text: 'Verify Now',
-                onPress: () => navigation.navigate('OTPVerification', {
-                  email: email,
-                  fromScreen: 'login'
-                })
-              },
-              {
-                text: 'Cancel',
-                style: 'cancel'
-              }
-            ]
-          );
+          showToast.warning('Please verify your email address first.', 'Email Not Verified');
+          // Small delay to show toast before navigation
+          setTimeout(() => {
+            navigation.navigate('OTPVerification', {
+              email: email,
+              fromScreen: 'login'
+            });
+          }, 1000);
         } else {
-          Alert.alert('Login Failed', result.message);
+          showToast.error(result.message, 'Login Failed');
         }
       }
     } catch (error) {
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      showToast.error('Something went wrong. Please try again.');
       console.error('Login error:', error);
     }
   };

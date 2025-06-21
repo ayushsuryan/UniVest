@@ -1,10 +1,11 @@
 import React, {useState} from 'react';
-import {View, Text, TouchableOpacity, Alert, ScrollView} from 'react-native';
+import {View, Text, TouchableOpacity, ScrollView} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import CustomInput from '../Components/CustomInput';
 import CustomButton from '../Components/CustomButton';
 import { useAuth } from '../context/AuthContext';
+import { showToast } from '../utils/toast';
 
 interface SignupProps {
   navigation: any;
@@ -84,23 +85,20 @@ const Signup: React.FC<SignupProps> = ({navigation}) => {
       });
 
       if (result.success) {
-        Alert.alert(
-          'Registration Successful!',
-          'Please check your email for the verification code.',
-          [{
-            text: 'Continue',
-            onPress: () => navigation.navigate('OTPVerification', {
-              email: formData.email,
-              phoneNumber: formData.phoneNumber,
-              fromScreen: 'signup'
-            })
-          }]
-        );
+        showToast.success('Please check your email for the verification code.', 'Registration Successful');
+        // Small delay to show toast before navigation
+        setTimeout(() => {
+          navigation.navigate('OTPVerification', {
+            email: formData.email,
+            phoneNumber: formData.phoneNumber,
+            fromScreen: 'signup'
+          });
+        }, 1000);
       } else {
-        Alert.alert('Registration Failed', result.message);
+        showToast.error(result.message, 'Registration Failed');
       }
     } catch (error) {
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      showToast.error('Something went wrong. Please try again.');
       console.error('Signup error:', error);
     }
   };
@@ -153,33 +151,7 @@ const Signup: React.FC<SignupProps> = ({navigation}) => {
           </Text>
         </View>
 
-        {/* Welcome Benefits */}
-        <View 
-          className="rounded-2xl p-4 mb-6 border border-emerald-100 shadow-sm"
-          style={{ backgroundColor: 'rgba(16, 185, 129, 0.05)' }}
-        >
-          <View className="flex-row items-center mb-3">
-            <View
-              className="rounded-xl p-2 mr-3"
-              style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}
-            >
-              <FeatherIcon name="gift" size={16} color="#059669" />
-            </View>
-            <Text className="text-emerald-800 font-bold text-base">Welcome Bonus</Text>
-          </View>
-          <View className="space-y-1">
-            <Text className="text-emerald-700 text-xs">
-              🎯 Free portfolio analysis worth ₹2,500
-            </Text>
-            <Text className="text-emerald-700 text-xs">
-              📈 Zero brokerage for first 30 days
-            </Text>
-            <Text className="text-emerald-700 text-xs">
-              💰 ₹500 signup bonus on first investment
-            </Text>
-          </View>
-        </View>
-
+     
         {/* Form */}
         <View className="mb-6">
           <View className="flex-row space-x-3 mb-4">
@@ -199,6 +171,7 @@ const Signup: React.FC<SignupProps> = ({navigation}) => {
                 value={formData.lastName}
                 onChangeText={(text) => updateFormData('lastName', text)}
                 error={errors.lastName}
+                className="px-2"
               />
             </View>
           </View>

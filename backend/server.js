@@ -31,8 +31,8 @@
 
   // CORS configuration
   app.use(cors({
-    origin: process.env.FRONTEND_URL || '*',
-    credentials: true
+    origin: '*',
+    credentials: false
   }));
 
   // Body parser middleware

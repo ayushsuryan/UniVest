@@ -1,8 +1,9 @@
 import React, {useState, useEffect, useRef} from 'react';
-import {View, Text, TouchableOpacity, TextInput, Alert} from 'react-native';
+import {View, Text, TouchableOpacity, TextInput} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import { useAuth } from '../context/AuthContext';
+import { showToast } from '../utils/toast';
 
 interface OTPVerificationProps {
   navigation: any;
@@ -49,7 +50,7 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({navigation, route}) =>
   const handleVerifyOTP = async () => {
     const otpString = otp.join('');
     if (otpString.length !== 6) {
-      Alert.alert('Invalid OTP', 'Please enter the complete 6-digit code.');
+      showToast.error('Please enter the complete 6-digit code.', 'Invalid OTP');
       return;
     }
 
@@ -57,45 +58,38 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({navigation, route}) =>
       const result = await verifyOTP(email, otpString);
 
       if (result.success) {
-        Alert.alert(
-          'Verification Successful!',
-          result.message,
-          [{
-            text: 'Continue',
-            onPress: () => {
-              if (fromScreen === 'signup') {
-                // For signup, navigate to login after successful verification
-                navigation.navigate('Login');
-              } else if (fromScreen === 'resetPassword') {
-                // For password reset, pass the OTP to the reset password screen
-                navigation.navigate('ResetPassword', { 
-                  email: email,
-                  otp: otpString,
-                  step: 'resetPassword' 
-                });
-              } else {
-                // Default navigation
-                navigation.goBack();
-              }
-            }
-          }]
-        );
+        showToast.success(result.message, 'Verification Successful');
+        // Small delay to show toast before navigation
+        setTimeout(() => {
+          if (fromScreen === 'signup') {
+            // For signup, navigate to login after successful verification
+            navigation.navigate('Login');
+          } else if (fromScreen === 'login') {
+            // For login, the App component will handle automatic navigation to Dashboard
+            // since the user is already authenticated and email is now verified
+            // No manual navigation needed
+          } else if (fromScreen === 'resetPassword') {
+            // For password reset, pass the OTP to the reset password screen
+            navigation.navigate('ResetPassword', { 
+              email: email,
+              otp: otpString,
+              step: 'resetPassword' 
+            });
+          } else {
+            // Default navigation
+            navigation.goBack();
+          }
+        }, 1000);
       } else {
         if (result.isInvalidOTP) {
-          Alert.alert(
-            'Invalid Code',
-            'The verification code is incorrect. Please check and try again.',
-            [{
-              text: 'Try Again',
-              onPress: () => setOtp(['', '', '', '', '', ''])
-            }]
-          );
+          showToast.error('The verification code is incorrect. Please check and try again.', 'Invalid Code');
+          setOtp(['', '', '', '', '', '']);
         } else {
-          Alert.alert('Verification Failed', result.message);
+          showToast.error(result.message, 'Verification Failed');
         }
       }
     } catch (error) {
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      showToast.error('Something went wrong. Please try again.');
       console.error('OTP verification error:', error);
     }
   };
@@ -108,12 +102,12 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({navigation, route}) =>
         setTimeLeft(60);
         setCanResend(false);
         setOtp(['', '', '', '', '', '']);
-        Alert.alert('OTP Sent', result.message);
+        showToast.success(result.message, 'OTP Sent');
       } else {
-        Alert.alert('Resend Failed', result.message);
+        showToast.error(result.message, 'Resend Failed');
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to resend OTP. Please try again.');
+      showToast.error('Failed to resend OTP. Please try again.');
       console.error('Resend OTP error:', error);
     }
   };

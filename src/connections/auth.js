@@ -4,20 +4,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // API Configuration
 // Use different URLs based on environment
 const getBaseURL = () => {
-  // For development, you can set this based on your setup:
-  // - Android Emulator: 'http://10.0.2.2:5000/api'
-  // - iOS Simulator: 'http://localhost:5000/api'  
-  // - Physical Device: 'http://YOUR_IP:5000/api'
-  // - Production: 'https://your-api-domain.com/api'
-  
   if (__DEV__) {
-    // Development environment
-    // return 'http://10.0.2.2:5000/api'; // Android Emulator
-    // return 'http://localhost:5000/api'; // iOS Simulator
-    return 'http://192.168.77.189:5000/api'; // Physical Device - Your computer's IP
+    return 'http://157.180.90.43/api'; // Physical Device - Your computer's IP
   } else {
-    // Production environment
-    return 'https://your-api-domain.com/api';
+    return 'http://157.180.90.43/api';
   }
 };
 

@@ -1,9 +1,10 @@
 import React, {useState, useEffect} from 'react';
-import {View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl, Modal, TextInput, Alert} from 'react-native';
+import {View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl, Modal, TextInput} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import AssetService from '../../connections/assets';
 import InvestmentService from '../../connections/investments';
+import { showToast } from '../../utils/toast';
 
 interface Asset {
   _id: string;
@@ -109,24 +110,24 @@ const Assets: React.FC = () => {
   // Handle investment submission
   const handleInvestment = async () => {
     if (!selectedAsset || !investmentAmount) {
-      Alert.alert('Error', 'Please enter a valid investment amount');
+      showToast.error('Please enter a valid investment amount');
       return;
     }
 
     const amount = parseFloat(investmentAmount);
     
     if (isNaN(amount) || amount <= 0) {
-      Alert.alert('Error', 'Please enter a valid investment amount');
+      showToast.error('Please enter a valid investment amount');
       return;
     }
 
     if (amount < selectedAsset.minInvestment) {
-      Alert.alert('Error', `Minimum investment amount is ₹${selectedAsset.minInvestment}`);
+      showToast.error(`Minimum investment amount is ₹${selectedAsset.minInvestment}`);
       return;
     }
 
     if (amount > userBalance) {
-      Alert.alert('Error', 'Insufficient balance');
+      showToast.error('Insufficient balance');
       return;
     }
 
@@ -136,23 +137,17 @@ const Assets: React.FC = () => {
       const response = await InvestmentService.createInvestment(selectedAsset._id, amount);
       
       if (response.success) {
-        Alert.alert('Success', 'Investment created successfully!', [
-          {
-            text: 'OK',
-            onPress: () => {
-              setInvestmentModalVisible(false);
-              setInvestmentAmount('');
-              setSelectedAsset(null);
-              loadUserBalance(); // Refresh balance
-            }
-          }
-        ]);
+        showToast.success('Investment created successfully!', 'Success');
+        setInvestmentModalVisible(false);
+        setInvestmentAmount('');
+        setSelectedAsset(null);
+        loadUserBalance(); // Refresh balance
       } else {
-        Alert.alert('Error', response.message || 'Failed to create investment');
+        showToast.error(response.message || 'Failed to create investment');
       }
     } catch (error) {
       console.error('Investment error:', error);
-      Alert.alert('Error', 'Failed to create investment. Please try again.');
+      showToast.error('Failed to create investment. Please try again.');
     } finally {
       setInvestmentLoading(false);
     }

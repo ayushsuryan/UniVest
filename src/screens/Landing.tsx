@@ -11,19 +11,16 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
-import CustomButton from '../Components/CustomButton';
 
 interface LandingProps {
   navigation: any;
 }
 
-const { width, height } = Dimensions.get('window');
 
 const Landing: React.FC<LandingProps> = ({ navigation }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
-  const rotateAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     // Entrance animations
@@ -284,7 +281,7 @@ const Landing: React.FC<LandingProps> = ({ navigation }) => {
             <TouchableOpacity
               onPress={() => navigation.navigate('Login')}
               activeOpacity={0.8}
-              className="rounded-2xl p-5"
+              className="rounded-2xl p-5 m-4"
               style={{
                 backgroundColor: '#059669',
                 shadowColor: '#059669',
@@ -305,7 +302,7 @@ const Landing: React.FC<LandingProps> = ({ navigation }) => {
             <TouchableOpacity
               onPress={() => navigation.navigate('Signup')}
               activeOpacity={0.8}
-              className="rounded-2xl p-5 border-2 border-emerald-600"
+              className="rounded-2xl p-5 m-4 border-2 border-emerald-600"
               style={{
                 backgroundColor: 'transparent',
               }}
@@ -319,58 +316,11 @@ const Landing: React.FC<LandingProps> = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
-          {/* Featured Commodities Section */}
-          <View className="mb-12">
-            <View className="px-6 mb-6">
-              <Text className="text-gray-800 text-2xl font-black mb-2">
-                Featured Commodities
-              </Text>
-              <Text className="text-gray-600 text-base">
-                High-demand products with hourly returns
-              </Text>
-            </View>
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 24 }}
-            >
-              <CommodityCard
-                icon="smartphone"
-                title="Phone Chargers"
-                return_rate="0.8%/hr"
-                min_investment="₹500"
-                index={0}
-              />
-              <CommodityCard
-                icon="headphones"
-                title="Bluetooth Earbuds"
-                return_rate="1.2%/hr"
-                min_investment="₹1000"
-                index={1}
-              />
-              <CommodityCard
-                icon="monitor"
-                title="LED Monitors"
-                return_rate="0.6%/hr"
-                min_investment="₹2000"
-                index={2}
-              />
-              <CommodityCard
-                icon="cpu"
-                title="Gaming Laptops"
-                return_rate="1.5%/hr"
-                min_investment="₹5000"
-                index={3}
-              />
-            </ScrollView>
-          </View>
-
           {/* Features Section */}
           <View className="px-6 mb-12">
             <View className="items-center mb-12">
               <Text className="text-gray-800 text-3xl font-black text-center mb-3">
-                Why Trade <Text className="text-emerald-600">Commodities?</Text>
+                Why invest <Text className="text-emerald-600">with us?</Text>
               </Text>
               <View className="w-20 h-1 bg-emerald-500 rounded-full" />
             </View>

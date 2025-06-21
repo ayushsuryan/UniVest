@@ -41,7 +41,7 @@ const CustomInput: React.FC<CustomInputProps> = ({
         <Text className="text-gray-700 text-base font-medium mb-2">{label}</Text>
       )}
       <View
-        className={`flex-row items-center border rounded-lg px-4 py-3 ${
+        className={`flex-row items-center border rounded-lg p-1 ${
           error
             ? 'border-red-500'
             : isFocused

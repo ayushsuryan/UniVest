@@ -1,9 +1,10 @@
 import React, {useState} from 'react';
-import {View, Text, TouchableOpacity, Alert, ScrollView} from 'react-native';
+import {View, Text, TouchableOpacity, ScrollView} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import CustomInput from '../Components/CustomInput';
 import { useAuth } from '../context/AuthContext';
+import { showToast } from '../utils/toast';
 
 interface ResetPasswordProps {
   navigation: any;
@@ -65,23 +66,20 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({navigation, route}) => {
       const result = await forgotPassword(email);
 
       if (result.success) {
-        Alert.alert(
-          'Reset Code Sent',
-          result.message,
-          [{
-            text: 'Continue',
-            onPress: () => navigation.navigate('OTPVerification', {
-              email: email,
-              phoneNumber: '98765 43210', // You might want to get this from user input
-              fromScreen: 'resetPassword'
-            })
-          }]
-        );
+        showToast.success(result.message, 'Reset Code Sent');
+        // Small delay to show toast before navigation
+        setTimeout(() => {
+          navigation.navigate('OTPVerification', {
+            email: email,
+            phoneNumber: '98765 43210', // You might want to get this from user input
+            fromScreen: 'resetPassword'
+          });
+        }, 1000);
       } else {
-        Alert.alert('Failed to Send Code', result.message);
+        showToast.error(result.message, 'Failed to Send Code');
       }
     } catch (error) {
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      showToast.error('Something went wrong. Please try again.');
       console.error('Forgot password error:', error);
     }
   };
@@ -99,44 +97,32 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({navigation, route}) => {
       const otp = route?.params?.otp || ''; // This should be passed from OTP verification
       
       if (!otp) {
-        Alert.alert(
-          'Verification Required',
-          'Please complete the OTP verification first.',
-          [{
-            text: 'Go Back',
-            onPress: () => setStep('requestReset')
-          }]
-        );
+        showToast.warning('Please complete the OTP verification first.', 'Verification Required');
+        setTimeout(() => {
+          setStep('requestReset');
+        }, 1500);
         return;
       }
       
       const result = await resetPassword(verifiedEmail || email, otp, newPassword);
 
       if (result.success) {
-        Alert.alert(
-          'Password Reset Successful!',
-          result.message,
-          [{
-            text: 'Go to Login',
-            onPress: () => navigation.navigate('Login')
-          }]
-        );
+        showToast.success(result.message, 'Password Reset Successful');
+        setTimeout(() => {
+          navigation.navigate('Login');
+        }, 1500);
       } else {
         if (result.isInvalidOTP) {
-          Alert.alert(
-            'Invalid Code',
-            'The verification code is invalid or expired. Please request a new one.',
-            [{
-              text: 'Request New Code',
-              onPress: () => setStep('requestReset')
-            }]
-          );
+          showToast.error('The verification code is invalid or expired. Please request a new one.', 'Invalid Code');
+          setTimeout(() => {
+            setStep('requestReset');
+          }, 2000);
         } else {
-          Alert.alert('Reset Failed', result.message);
+          showToast.error(result.message, 'Reset Failed');
         }
       }
     } catch (error) {
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      showToast.error('Something went wrong. Please try again.');
       console.error('Reset password error:', error);
     }
   };

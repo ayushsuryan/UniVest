@@ -8,6 +8,8 @@ import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import InvestmentService from '../../connections/investments';
+import { RootStackParamList } from '../../../App';
+import { showToast } from '../../utils/toast';
 
 // Define tab navigator param list
 type TabParamList = {
@@ -17,29 +19,10 @@ type TabParamList = {
   Profile: undefined;
 };
 
-// Define stack navigator param list (parent)
-type StackParamList = {
-  Landing: undefined;
-  Login: undefined;
-  Signup: undefined;
-  OTPVerification: {
-    email: string;
-    phoneNumber?: string;
-    fromScreen: string;
-  };
-  ResetPassword: {
-    email?: string;
-    phoneNumber?: string;
-    verified?: boolean;
-  };
-  Dashboard: undefined;
-  Notifications: undefined;
-};
-
 // Composite navigation type for accessing both tab and stack navigators
 type HomeNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<TabParamList, 'Home'>,
-  StackNavigationProp<StackParamList>
+  StackNavigationProp<RootStackParamList>
 >;
 
 interface Investment {
@@ -194,7 +177,7 @@ const Home: React.FC = () => {
   // Handle deposit
   const handleDeposit = async () => {
     if (!depositAmount || parseFloat(depositAmount) <= 0) {
-      Alert.alert('Error', 'Please enter a valid deposit amount');
+      showToast.error('Please enter a valid deposit amount');
       return;
     }
 
@@ -203,18 +186,12 @@ const Home: React.FC = () => {
       // Mock deposit API call - replace with actual API
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      Alert.alert('Success', `₹${parseFloat(depositAmount).toLocaleString()} deposited successfully!`, [
-        {
-          text: 'OK',
-          onPress: () => {
-            setDepositModalVisible(false);
-            setDepositAmount('');
-            loadPortfolioStats(); // Refresh data
-          }
-        }
-      ]);
+      showToast.success(`₹${parseFloat(depositAmount).toLocaleString()} deposited successfully!`, 'Success');
+      setDepositModalVisible(false);
+      setDepositAmount('');
+      loadPortfolioStats(); // Refresh data
     } catch (error) {
-      Alert.alert('Error', 'Failed to process deposit. Please try again.');
+      showToast.error('Failed to process deposit. Please try again.');
     } finally {
       setTransactionLoading(false);
     }
@@ -225,12 +202,12 @@ const Home: React.FC = () => {
     const amount = parseFloat(withdrawAmount);
     
     if (!withdrawAmount || amount <= 0) {
-      Alert.alert('Error', 'Please enter a valid withdrawal amount');
+      showToast.error('Please enter a valid withdrawal amount');
       return;
     }
 
     if (amount > portfolioStats.balance) {
-      Alert.alert('Error', 'Insufficient balance');
+      showToast.error('Insufficient balance');
       return;
     }
 
@@ -239,18 +216,12 @@ const Home: React.FC = () => {
       // Mock withdrawal API call - replace with actual API
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      Alert.alert('Success', `₹${amount.toLocaleString()} withdrawal initiated!`, [
-        {
-          text: 'OK',
-          onPress: () => {
-            setWithdrawModalVisible(false);
-            setWithdrawAmount('');
-            loadPortfolioStats(); // Refresh data
-          }
-        }
-      ]);
+      showToast.success(`₹${amount.toLocaleString()} withdrawal initiated!`, 'Success');
+      setWithdrawModalVisible(false);
+      setWithdrawAmount('');
+      loadPortfolioStats(); // Refresh data
     } catch (error) {
-      Alert.alert('Error', 'Failed to process withdrawal. Please try again.');
+      showToast.error('Failed to process withdrawal. Please try again.');
     } finally {
       setTransactionLoading(false);
     }

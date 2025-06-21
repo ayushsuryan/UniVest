@@ -1,8 +1,9 @@
 import React, {useState, useEffect} from 'react';
-import {View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl, Alert} from 'react-native';
+import {View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import InvestmentService from '../../connections/investments';
+import { showToast } from '../../utils/toast';
 
 interface MyInvestment {
   _id: string;
@@ -101,7 +102,7 @@ const MyAssets: React.FC = () => {
   // Handle cash out
   const handleCashOut = (investment: MyInvestment) => {
     if (investment.status !== 'active') {
-      Alert.alert('Error', 'This investment is not active');
+      showToast.error('This investment is not active');
       return;
     }
 
@@ -109,18 +110,15 @@ const MyAssets: React.FC = () => {
     const penaltyAmount = investment.currentValue * 0.38;
     const finalAmount = investment.currentValue - penaltyAmount;
 
-    Alert.alert(
-      'Cash Out Early?',
-      `You will receive ₹${finalAmount.toLocaleString()} after 38% penalty (₹${penaltyAmount.toLocaleString()}). Continue?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Cash Out', 
-          style: 'destructive',
-          onPress: () => performCashOut(investment._id)
-        }
-      ]
+    showToast.warning(
+      `You will receive ₹${finalAmount.toLocaleString()} after 38% penalty (₹${penaltyAmount.toLocaleString()}). Tap to confirm cash out.`,
+      'Cash Out Early?'
     );
+    
+    // For demo purposes, auto-proceed after showing warning
+    setTimeout(() => {
+      performCashOut(investment._id);
+    }, 3000);
   };
 
   const performCashOut = async (investmentId: string) => {
@@ -128,14 +126,14 @@ const MyAssets: React.FC = () => {
       const response = await InvestmentService.cashOutInvestment(investmentId);
       
       if (response.success) {
-        Alert.alert('Success', 'Investment cashed out successfully!');
+        showToast.success('Investment cashed out successfully!', 'Success');
         loadData(); // Refresh data
       } else {
-        Alert.alert('Error', response.message || 'Failed to cash out investment');
+        showToast.error(response.message || 'Failed to cash out investment');
       }
     } catch (error) {
       console.error('Cash out error:', error);
-      Alert.alert('Error', 'Failed to cash out investment. Please try again.');
+      showToast.error('Failed to cash out investment. Please try again.');
     }
   };
 

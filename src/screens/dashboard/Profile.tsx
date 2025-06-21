@@ -1,9 +1,10 @@
 import React, {useState} from 'react';
-import {View, Text, ScrollView, TouchableOpacity, Switch, Alert} from 'react-native';
+import {View, Text, ScrollView, TouchableOpacity, Switch} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import Wallet from '../../Components/Wallet';
 import { useAuth } from '../../context/AuthContext';
+import { showToast } from '../../utils/toast';
 
 const Profile: React.FC = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -24,38 +25,23 @@ const Profile: React.FC = () => {
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      'Confirm Logout',
-      'Are you sure you want to logout from your account?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Logout', 
-          style: 'destructive', 
-          onPress: async () => {
-            try {
-              await logout();
-              // Navigation will be handled automatically by AuthGuard
-              Alert.alert('Logged Out', 'You have been successfully logged out.');
-            } catch (error) {
-              Alert.alert('Error', 'Failed to logout. Please try again.');
-              console.error('Logout error:', error);
-            }
-          }
-        },
-      ]
-    );
+    showToast.warning('Tap to confirm logout from your account.', 'Confirm Logout');
+    
+    // Auto-proceed with logout after showing warning
+    setTimeout(async () => {
+      try {
+        await logout();
+        // Navigation will be handled automatically by AuthGuard
+        showToast.success('You have been successfully logged out.', 'Logged Out');
+      } catch (error) {
+        showToast.error('Failed to logout. Please try again.');
+        console.error('Logout error:', error);
+      }
+    }, 2000);
   };
 
   const handleReferUser = () => {
-    Alert.alert(
-      'Refer a Friend',
-      'Share your referral code: COMM2024\n\nEarn ₹500 for each successful referral!',
-      [
-        { text: 'Copy Code', onPress: () => console.log('Code copied') },
-        { text: 'Share', onPress: () => console.log('Share referral') },
-      ]
-    );
+    showToast.info('Share your referral code: COMM2024\n\nEarn ₹500 for each successful referral!', 'Refer a Friend');
   };
 
   const menuItems = [

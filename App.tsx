@@ -1,9 +1,10 @@
-import React from 'react';
-import {NavigationContainer} from '@react-navigation/native';
-import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import { AuthProvider } from './src/context/AuthContext';
-import { AuthGuard } from './src/Components/AuthGuard';
+import React, { useEffect, useRef } from 'react';
+import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import Toast from 'react-native-toast-message';
+import { AuthProvider, useAuth } from './src/context/AuthContext';
+import { AuthGuard, GuestGuard } from './src/Components/AuthGuard';
 import Landing from './src/screens/Landing';
 import Login from './src/screens/Login';
 import Signup from './src/screens/Signup';
@@ -19,28 +20,46 @@ import Notifications from './src/screens/dashboard/Notifications';
 import './global.css';
 import CustomBottomTabBar from './src/Components/CustomBottomTabBar';
 
-const Stack = createNativeStackNavigator();
+// Define navigation types
+export type RootStackParamList = {
+  Landing: undefined;
+  Login: undefined;
+  Signup: undefined;
+  OTPVerification: {
+    email: string;
+    phoneNumber?: string;
+    fromScreen: string;
+  };
+  ResetPassword: {
+    email?: string;
+    phoneNumber?: string;
+    verified?: boolean;
+  };
+  Dashboard: undefined;
+  Notifications: undefined;
+};
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
 
-// Bottom Tabs used inside Dashboard
+// Bottom Tabs used inside Dashboard (Protected)
 const DashboardTabs = () => {
   return (
-    <AuthGuard requireAuth={true} requireEmailVerified={true}>
-      <Tab.Navigator
-        tabBar={(props) => <CustomBottomTabBar {...props} />}
-        screenOptions={{headerShown: false}}>
-        <Tab.Screen name="Home" component={Home} />
-        <Tab.Screen name="Assets" component={Assets} />
-        <Tab.Screen name="My" component={MyAssets} />
-        <Tab.Screen name="Profile" component={Profile} />
-      </Tab.Navigator>
-    </AuthGuard>
+    <Tab.Navigator
+      tabBar={(props) => <CustomBottomTabBar {...props} />}
+      screenOptions={{headerShown: false}}>
+      <Tab.Screen name="Home" component={Home} />
+      <Tab.Screen name="Assets" component={Assets} />
+      <Tab.Screen name="My" component={MyAssets} />
+      <Tab.Screen name="Profile" component={Profile} />
+    </Tab.Navigator>
   );
 };
 
-const AppNavigator: React.FC = () => {
+// Auth Stack (for unauthenticated users)
+const AuthStack = () => {
   return (
-    <NavigationContainer>
+    <GuestGuard>
       <Stack.Navigator
         initialRouteName="Landing"
         screenOptions={{
@@ -51,8 +70,98 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name="Signup" component={Signup} />
         <Stack.Screen name="OTPVerification" component={OTPVerification} />
         <Stack.Screen name="ResetPassword" component={ResetPassword} />
+      </Stack.Navigator>
+    </GuestGuard>
+  );
+};
+
+// Main App Stack (for authenticated users)
+const MainStack = () => {
+  return (
+    <AuthGuard requireAuth={true} requireEmailVerified={true}>
+      <Stack.Navigator
+        initialRouteName="Dashboard"
+        screenOptions={{
+          headerShown: false,
+        }}>
         <Stack.Screen name="Dashboard" component={DashboardTabs} />
         <Stack.Screen name="Notifications" component={Notifications} />
+      </Stack.Navigator>
+    </AuthGuard>
+  );
+};
+
+// App Navigator with authentication-based routing
+const AppNavigator: React.FC = () => {
+  const { isAuthenticated, isInitialized, user } = useAuth();
+  const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
+
+  // Handle navigation based on authentication state changes
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    // If user logs out, navigate to Landing
+    if (!isAuthenticated) {
+      navigationRef.current?.reset({
+        index: 0,
+        routes: [{ name: 'Landing' }],
+      });
+    }
+    // If user logs in, navigate to Dashboard
+    else if (isAuthenticated && user?.isEmailVerified) {
+      navigationRef.current?.reset({
+        index: 0,
+        routes: [{ name: 'Dashboard' }],
+      });
+    }
+  }, [isAuthenticated, isInitialized, user?.isEmailVerified]);
+
+  return (
+    <NavigationContainer ref={navigationRef}>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+        }}>
+        {!isAuthenticated ? (
+          // Auth screens for unauthenticated users
+          <>
+            <Stack.Screen name="Landing" component={Landing} />
+            <Stack.Screen name="Login">
+              {(props) => (
+                <GuestGuard>
+                  <Login {...props} />
+                </GuestGuard>
+              )}
+            </Stack.Screen>
+            <Stack.Screen name="Signup">
+              {(props) => (
+                <GuestGuard>
+                  <Signup {...props} />
+                </GuestGuard>
+              )}
+            </Stack.Screen>
+            <Stack.Screen name="OTPVerification" component={OTPVerification} />
+            <Stack.Screen name="ResetPassword" component={ResetPassword} />
+          </>
+        ) : (
+          // Main app screens for authenticated users
+          <>
+            <Stack.Screen name="Dashboard">
+              {() => (
+                <AuthGuard requireAuth={true} requireEmailVerified={true}>
+                  <DashboardTabs />
+                </AuthGuard>
+              )}
+            </Stack.Screen>
+            <Stack.Screen name="Notifications">
+              {() => (
+                <AuthGuard requireAuth={true} requireEmailVerified={true}>
+                  <Notifications />
+                </AuthGuard>
+              )}
+            </Stack.Screen>
+          </>
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -62,6 +171,7 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <AppNavigator />
+      <Toast />
     </AuthProvider>
   );
 };

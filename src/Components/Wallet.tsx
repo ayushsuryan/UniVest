@@ -3,6 +3,7 @@ import {View, Text, ScrollView, TouchableOpacity, Alert, Modal} from 'react-nati
 import {SafeAreaView} from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import CustomInput from './CustomInput';
+import { showToast } from '../utils/toast';
 
 interface Transaction {
   id: string;
@@ -65,7 +66,7 @@ const Wallet: React.FC = () => {
 
   const handleDeposit = () => {
     if (!depositAmount || parseFloat(depositAmount) <= 0) {
-      Alert.alert('Error', 'Please enter a valid amount');
+      showToast.error('Please enter a valid amount');
       return;
     }
     
@@ -73,25 +74,25 @@ const Wallet: React.FC = () => {
     setBalance(prev => prev + amount);
     setDepositAmount('');
     setShowDepositModal(false);
-    Alert.alert('Success', `₹${amount.toFixed(2)} deposited successfully!`);
+    showToast.success(`₹${amount.toFixed(2)} deposited successfully!`, 'Success');
   };
 
   const handleWithdraw = () => {
     if (!withdrawAmount || parseFloat(withdrawAmount) <= 0) {
-      Alert.alert('Error', 'Please enter a valid amount');
+      showToast.error('Please enter a valid amount');
       return;
     }
     
     const amount = parseFloat(withdrawAmount);
     if (amount > balance) {
-      Alert.alert('Error', 'Insufficient balance');
+      showToast.error('Insufficient balance');
       return;
     }
     
     setBalance(prev => prev - amount);
     setWithdrawAmount('');
     setShowWithdrawModal(false);
-    Alert.alert('Success', `₹${amount.toFixed(2)} withdrawal initiated!`);
+    showToast.success(`₹${amount.toFixed(2)} withdrawal initiated!`, 'Success');
   };
 
   const getTransactionIcon = (type: string) => {

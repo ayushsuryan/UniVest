@@ -4,27 +4,9 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../../../App';
 
-// Define navigation types
-type StackParamList = {
-  Landing: undefined;
-  Login: undefined;
-  Signup: undefined;
-  OTPVerification: {
-    email: string;
-    phoneNumber?: string;
-    fromScreen: string;
-  };
-  ResetPassword: {
-    email?: string;
-    phoneNumber?: string;
-    verified?: boolean;
-  };
-  Dashboard: undefined;
-  Notifications: undefined;
-};
-
-type NotificationsNavigationProp = StackNavigationProp<StackParamList, 'Notifications'>;
+type NotificationsNavigationProp = StackNavigationProp<RootStackParamList, 'Notifications'>;
 
 const Notifications: React.FC = () => {
   const navigation = useNavigation<NotificationsNavigationProp>();

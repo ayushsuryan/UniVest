@@ -4,9 +4,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // API Configuration
 const getBaseURL = () => {
   if (__DEV__) {
-    return 'http://192.168.77.189:5000/api'; // Physical Device - Your computer's IP
+    return 'http://157.180.90.43/api'; // Physical Device - Your computer's IP
   } else {
-    return 'https://your-api-domain.com/api';
+    return 'http://157.180.90.43/api';
   }
 };
 
