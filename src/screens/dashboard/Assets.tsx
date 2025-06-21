@@ -1,91 +1,90 @@
-import React, {useState} from 'react';
-import {View, Text, ScrollView, TouchableOpacity, Image} from 'react-native';
+import React, {useState, useEffect} from 'react';
+import {View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
+import AssetService from '../../connections/assets';
 
-interface Commodity {
-  id: string;
+interface Asset {
+  _id: string;
   name: string;
   category: string;
-  hourlyReturn: number;
+  hourlyReturnPercentage: number;
   minInvestment: number;
   currentDemand: string;
   maturityPeriod: string;
   totalInvestors: number;
   image: string;
+  price: number;
+  hourlyReturnReferralPercentage: number;
 }
 
 const Assets: React.FC = () => {
   const [selectedFilter, setSelectedFilter] = useState('all');
-  
-  const commodities: Commodity[] = [
-    {
-      id: '1',
-      name: 'Phone Chargers',
-      category: 'Electronics',
-      hourlyReturn: 0.8,
-      minInvestment: 500,
-      currentDemand: 'High',
-      maturityPeriod: '30 days',
-      totalInvestors: 1245,
-      image: 'https://picsum.photos/200/200?random=1',
-    },
-    {
-      id: '2',
-      name: 'Bluetooth Earbuds',
-      category: 'Electronics',
-      hourlyReturn: 1.2,
-      minInvestment: 1000,
-      currentDemand: 'Very High',
-      maturityPeriod: '45 days',
-      totalInvestors: 892,
-      image: 'https://picsum.photos/200/200?random=2',
-    },
-    {
-      id: '3',
-      name: 'LED Monitors',
-      category: 'Electronics',
-      hourlyReturn: 0.6,
-      minInvestment: 2000,
-      currentDemand: 'Medium',
-      maturityPeriod: '60 days',
-      totalInvestors: 567,
-      image: 'https://picsum.photos/200/200?random=3',
-    },
-    {
-      id: '4',
-      name: 'Gaming Laptops',
-      category: 'Electronics',
-      hourlyReturn: 1.5,
-      minInvestment: 5000,
-      currentDemand: 'High',
-      maturityPeriod: '90 days',
-      totalInvestors: 234,
-      image: 'https://picsum.photos/200/200?random=4',
-    },
-    {
-      id: '5',
-      name: 'Smart Watches',
-      category: 'Wearables',
-      hourlyReturn: 0.9,
-      minInvestment: 1500,
-      currentDemand: 'High',
-      maturityPeriod: '45 days',
-      totalInvestors: 678,
-      image: 'https://picsum.photos/200/200?random=5',
-    },
-    {
-      id: '6',
-      name: 'Wireless Mice',
-      category: 'Accessories',
-      hourlyReturn: 0.4,
-      minInvestment: 300,
-      currentDemand: 'Medium',
-      maturityPeriod: '30 days',
-      totalInvestors: 456,
-      image: 'https://picsum.photos/200/200?random=6',
-    },
-  ];
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load assets from API
+  const loadAssets = async (showRefreshIndicator = false) => {
+    try {
+      if (showRefreshIndicator) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+
+      const filters = {
+        category: selectedFilter === 'electronics' ? 'Electronics' : undefined,
+        demand: selectedFilter === 'high' ? 'high' : selectedFilter === 'medium' ? 'medium' : undefined
+      };
+
+      const response = await AssetService.getAssets(filters);
+      
+      if (response.success) {
+        setAssets(response.data);
+      } else {
+        setError(response.message);
+        // Try to seed test data if no assets found
+        if (response.data.length === 0) {
+          console.log('No assets found, seeding test data...');
+          const seedResponse = await AssetService.seedTestData();
+          if (seedResponse.success) {
+            const assetsResponse = await AssetService.getAssets(filters);
+            if (assetsResponse.success) {
+              setAssets(assetsResponse.data);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading assets:', error);
+      setError('Failed to load assets. Please try again.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  // Load assets on component mount and filter change
+  useEffect(() => {
+    loadAssets();
+  }, [selectedFilter]);
+
+  // Pull to refresh
+  const onRefresh = () => {
+    loadAssets(true);
+  };
+
+  // Filter assets based on selected filter
+  const filteredAssets = assets.filter(asset => {
+    if (selectedFilter === 'all') return true;
+    if (selectedFilter === 'high') return asset.currentDemand === 'High' || asset.currentDemand === 'Very High';
+    if (selectedFilter === 'medium') return asset.currentDemand === 'Medium';
+    if (selectedFilter === 'electronics') return asset.category === 'Electronics';
+    return true;
+  });
 
   const filters = [
     {key: 'all', label: 'All Commodities'},
@@ -93,14 +92,6 @@ const Assets: React.FC = () => {
     {key: 'medium', label: 'Medium Demand'},
     {key: 'electronics', label: 'Electronics'},
   ];
-
-  const filteredCommodities = commodities.filter(commodity => {
-    if (selectedFilter === 'all') return true;
-    if (selectedFilter === 'high') return commodity.currentDemand === 'High' || commodity.currentDemand === 'Very High';
-    if (selectedFilter === 'medium') return commodity.currentDemand === 'Medium';
-    if (selectedFilter === 'electronics') return commodity.category === 'Electronics';
-    return true;
-  });
 
   const getDemandColor = (demand: string) => {
     switch (demand.toLowerCase()) {
@@ -121,6 +112,33 @@ const Assets: React.FC = () => {
       default: return 'rgba(107, 114, 128, 0.1)';
     }
   };
+
+  // Calculate market overview from loaded assets
+  const marketOverview = {
+    totalVolume: assets.reduce((sum, asset) => sum + (asset.price * asset.totalInvestors), 0),
+    activeTraders: assets.reduce((sum, asset) => sum + asset.totalInvestors, 0),
+    avgHourlyReturn: assets.length > 0 ? (assets.reduce((sum, asset) => sum + asset.hourlyReturnPercentage, 0) / assets.length) : 0
+  };
+
+  const formatCurrency = (amount: number) => {
+    if (amount >= 10000000) {
+      return `₹${(amount / 10000000).toFixed(1)}Cr`;
+    } else if (amount >= 100000) {
+      return `₹${(amount / 100000).toFixed(1)}L`;
+    } else if (amount >= 1000) {
+      return `₹${(amount / 1000).toFixed(1)}K`;
+    }
+    return `₹${amount}`;
+  };
+
+  if (loading && !refreshing) {
+    return (
+      <SafeAreaView className="flex-1 justify-center items-center" style={{ backgroundColor: '#f8fafc' }}>
+        <ActivityIndicator size="large" color="#059669" />
+        <Text className="text-gray-600 mt-4">Loading assets...</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: '#f8fafc' }}>
@@ -154,8 +172,9 @@ const Assets: React.FC = () => {
           <TouchableOpacity
             className="rounded-2xl p-3 bg-white shadow-sm border border-gray-100"
             activeOpacity={0.8}
+            onPress={onRefresh}
           >
-            <FeatherIcon name="filter" size={24} color="#059669" />
+            <FeatherIcon name="refresh-cw" size={24} color="#059669" />
           </TouchableOpacity>
         </View>
 
@@ -171,15 +190,15 @@ const Assets: React.FC = () => {
           <View className="flex-row justify-between">
             <View>
               <Text className="text-gray-500 text-sm">Total Volume</Text>
-              <Text className="text-gray-900 text-xl font-black">₹2.4Cr</Text>
+              <Text className="text-gray-900 text-xl font-black">{formatCurrency(marketOverview.totalVolume)}</Text>
             </View>
             <View>
               <Text className="text-gray-500 text-sm">Active Traders</Text>
-              <Text className="text-gray-900 text-xl font-black">15K+</Text>
+              <Text className="text-gray-900 text-xl font-black">{marketOverview.activeTraders.toLocaleString()}+</Text>
             </View>
             <View>
               <Text className="text-gray-500 text-sm">Avg. Hourly Return</Text>
-              <Text className="text-green-600 text-xl font-black">+0.8%</Text>
+              <Text className="text-green-600 text-xl font-black">+{marketOverview.avgHourlyReturn.toFixed(1)}%</Text>
             </View>
           </View>
         </View>
@@ -198,21 +217,13 @@ const Assets: React.FC = () => {
               onPress={() => setSelectedFilter(filter.key)}
               className={`mr-3 px-6 py-3 rounded-2xl ${
                 selectedFilter === filter.key
-                  ? 'bg-emerald-600 shadow-lg'
+                  ? 'bg-green-600'
                   : 'bg-white border border-gray-200'
               }`}
-              style={{
-                shadowColor: selectedFilter === filter.key ? '#059669' : 'transparent',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.3,
-                shadowRadius: 8,
-                elevation: selectedFilter === filter.key ? 8 : 2,
-              }}
+              activeOpacity={0.8}
             >
-              <Text className={`font-bold ${
-                selectedFilter === filter.key
-                  ? 'text-white'
-                  : 'text-gray-700'
+              <Text className={`font-bold text-sm ${
+                selectedFilter === filter.key ? 'text-white' : 'text-gray-700'
               }`}>
                 {filter.label}
               </Text>
@@ -221,105 +232,94 @@ const Assets: React.FC = () => {
         </ScrollView>
       </View>
 
-      <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false}>
-        <View className="space-y-4 pb-24">
-          {filteredCommodities.map((commodity) => (
-            <View key={commodity.id} className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100">
-              <View className="flex-row justify-between items-start mb-4">
-                <View className="flex-row items-center flex-1">
-                  <View 
-                    className="w-16 h-16 rounded-2xl mr-4 shadow-sm overflow-hidden"
-                    style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}
-                  >
-                    <Image
-                      source={{ uri: commodity.image }}
-                      className="w-full h-full"
-                      style={{ borderRadius: 16 }}
-                    />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-gray-900 text-xl font-black">
-                      {commodity.name}
-                    </Text>
-                    <Text className="text-gray-500 text-base font-medium">
-                      {commodity.category}
-                    </Text>
-                  </View>
-                </View>
+      {/* Error Message */}
+      {error && (
+        <View className="mx-6 mb-4 p-4 bg-red-50 rounded-2xl border border-red-200">
+          <Text className="text-red-600 text-center">{error}</Text>
+          <TouchableOpacity 
+            onPress={() => loadAssets()}
+            className="mt-2 py-2 px-4 bg-red-600 rounded-xl self-center"
+          >
+            <Text className="text-white font-bold">Retry</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Assets List */}
+      <ScrollView 
+        className="flex-1 px-6"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {filteredAssets.map((asset) => (
+          <TouchableOpacity
+            key={asset._id}
+            className="bg-white rounded-3xl p-6 mb-6 shadow-lg border border-gray-100"
+            activeOpacity={0.95}
+          >
+            <View className="flex-row items-center mb-4">
+              <Image
+                source={{ uri: asset.image }}
+                className="w-16 h-16 rounded-2xl mr-4"
+                style={{ backgroundColor: '#f3f4f6' }}
+              />
+              <View className="flex-1">
+                <Text className="text-gray-900 text-lg font-black">{asset.name}</Text>
+                <Text className="text-gray-500 text-sm">{asset.category}</Text>
                 <View 
-                  className="px-4 py-2 rounded-2xl border"
-                  style={{ 
-                    backgroundColor: getDemandBg(commodity.currentDemand),
-                    borderColor: getDemandColor(commodity.currentDemand)
-                  }}
+                  className="mt-1 px-3 py-1 rounded-full self-start"
+                  style={{ backgroundColor: getDemandBg(asset.currentDemand) }}
                 >
                   <Text 
-                    className="text-sm font-bold"
-                    style={{ color: getDemandColor(commodity.currentDemand) }}
+                    className="text-xs font-bold"
+                    style={{ color: getDemandColor(asset.currentDemand) }}
                   >
-                    {commodity.currentDemand}
+                    {asset.currentDemand} Demand
                   </Text>
                 </View>
               </View>
-
-              <View className="flex-row justify-between items-center mb-4">
-                <View className="flex-1">
-                  <Text className="text-gray-500 text-sm font-medium">Hourly Return</Text>
-                  <Text className="text-green-600 text-2xl font-black">
-                    {commodity.hourlyReturn}%/hr
-                  </Text>
-                </View>
-                <View className="flex-1 items-center">
-                  <Text className="text-gray-500 text-sm font-medium">Min Investment</Text>
-                  <Text className="text-gray-900 text-xl font-black">
-                    ₹{commodity.minInvestment.toLocaleString()}
-                  </Text>
-                </View>
-                <View className="flex-1 items-end">
-                  <Text className="text-gray-500 text-sm font-medium">Maturity</Text>
-                  <Text className="text-gray-900 text-lg font-black">
-                    {commodity.maturityPeriod}
-                  </Text>
-                </View>
+              <View className="items-end">
+                <Text className="text-green-600 text-lg font-black">+{asset.hourlyReturnPercentage}%</Text>
+                <Text className="text-gray-500 text-xs">Hourly Return</Text>
               </View>
-
-              <View className="flex-row items-center justify-between mb-6">
-                <View className="flex-row items-center">
-                  <FeatherIcon name="users" size={16} color="#6b7280" />
-                  <Text className="text-gray-500 text-sm ml-2">
-                    {commodity.totalInvestors} investors
-                  </Text>
-                </View>
-                <View className="flex-row items-center">
-                  <FeatherIcon name="clock" size={16} color="#10b981" />
-                  <Text className="text-green-600 text-sm font-bold ml-2">
-                    Live Returns
-                  </Text>
-                </View>
+            </View>
+            
+            <View className="border-t border-gray-100 pt-4">
+              <View className="flex-row justify-between mb-2">
+                <Text className="text-gray-500 text-sm">Min. Investment</Text>
+                <Text className="text-gray-900 font-bold text-sm">₹{asset.minInvestment.toLocaleString()}</Text>
               </View>
-
-              <TouchableOpacity
-                className="rounded-2xl p-4 shadow-lg"
-                style={{
-                  backgroundColor: '#059669',
-                  shadowColor: '#059669',
-                  shadowOffset: { width: 0, height: 8 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 20,
-                  elevation: 12,
-                }}
+              <View className="flex-row justify-between mb-2">
+                <Text className="text-gray-500 text-sm">Maturity Period</Text>
+                <Text className="text-gray-900 font-bold text-sm">{asset.maturityPeriod}</Text>
+              </View>
+              <View className="flex-row justify-between mb-4">
+                <Text className="text-gray-500 text-sm">Total Investors</Text>
+                <Text className="text-gray-900 font-bold text-sm">{asset.totalInvestors.toLocaleString()}</Text>
+              </View>
+              
+              <TouchableOpacity 
+                className="bg-green-600 py-4 rounded-2xl"
                 activeOpacity={0.8}
               >
-                <View className="flex-row items-center justify-center">
-                  <FeatherIcon name="shopping-cart" size={20} color="white" />
-                  <Text className="text-white text-lg font-black ml-2">
-                    Invest Now
-                  </Text>
-                </View>
+                <Text className="text-white text-center font-black text-base">
+                  Invest Now
+                </Text>
               </TouchableOpacity>
             </View>
-          ))}
-        </View>
+          </TouchableOpacity>
+        ))}
+        
+        {filteredAssets.length === 0 && !loading && !error && (
+          <View className="items-center py-20">
+            <Text className="text-gray-500 text-lg">No assets found</Text>
+            <Text className="text-gray-400 text-sm mt-2">Try adjusting your filters</Text>
+          </View>
+        )}
+        
+        <View className="h-20" />
       </ScrollView>
     </SafeAreaView>
   );
