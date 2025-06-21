@@ -10,6 +10,9 @@ const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
 
+// Trust proxy for Nginx reverse proxy
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet());
 
@@ -43,7 +46,7 @@ mongoose.connect(process.env.MONGODB_URI, {
 app.use('/api/auth', authRoutes);
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
+app.get('/ayush/health', (req, res) => {
   res.status(200).json({ 
     status: 'OK', 
     message: 'Finance Backend Server is running',

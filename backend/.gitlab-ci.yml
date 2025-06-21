@@ -1,0 +1,82 @@
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  NODE_VERSION: "18"
+  DEPLOY_USER: "root"
+  DEPLOY_HOST: "157.180.90.43"
+  APP_NAME: "finance-backend"
+  APP_PATH: "/var/www/finance-backend"
+
+before_script:
+  - which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )
+  - eval $(ssh-agent -s)
+  - echo "$SSH_PRIVATE_KEY" > /tmp/ssh_key
+  - chmod 600 /tmp/ssh_key
+  - ssh-add /tmp/ssh_key
+  - rm /tmp/ssh_key
+  - mkdir -p ~/.ssh
+  - echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+  - chmod 644 ~/.ssh/known_hosts
+
+build:
+  stage: build
+  image: node:${NODE_VERSION}
+  cache:
+    paths:
+      - node_modules/
+  script:
+    - npm ci --production
+  artifacts:
+    paths:
+      - node_modules/
+    expire_in: 1 hour
+  only:
+    - main
+    - master
+
+test:
+  stage: test
+  image: node:${NODE_VERSION}
+  dependencies:
+    - build
+  script:
+    - npm run test || echo "No tests defined"
+  only:
+    - main
+    - master
+
+deploy:
+  stage: deploy
+  image: node:18
+  before_script:
+    - which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" > /tmp/ssh_key
+    - chmod 600 /tmp/ssh_key
+    - ssh-add /tmp/ssh_key
+    - rm /tmp/ssh_key
+    - mkdir -p ~/.ssh
+    - echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    - apt-get update -y
+    - apt-get install -y rsync
+  script:
+    - echo "🚀 Starting deployment to production server..."
+    - echo "📡 Testing SSH connection..."
+    - ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 root@157.180.90.43 "echo 'SSH connection successful - $(date)'"
+    - echo "📦 Syncing files to server..."
+    - rsync -avz --delete --exclude=node_modules --exclude=.git --exclude=.gitlab-ci.yml ./ root@157.180.90.43:/var/www/finance-backend/
+    - echo "📋 Installing dependencies on server..."
+    - ssh -o StrictHostKeyChecking=no root@157.180.90.43 "cd /var/www/finance-backend && npm install --production --silent"
+    - echo "🔄 Restarting application..."
+    - ssh -o StrictHostKeyChecking=no root@157.180.90.43 "pm2 restart finance-backend || pm2 start server.js --name finance-backend"
+    - echo "✅ Deployment completed successfully at $(date)"
+    - ssh -o StrictHostKeyChecking=no root@157.180.90.43 "echo 'Server status:' && pm2 list finance-backend"
+  only:
+    - main
+  environment:
+    name: production
+    url: http://157.180.90.43 
