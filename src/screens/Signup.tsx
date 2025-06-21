@@ -214,7 +214,7 @@ const Signup: React.FC<SignupProps> = ({navigation}) => {
 
           <CustomInput
             label="Phone Number"
-            placeholder="+91 98765 43210"
+            placeholder=" 98765 43210"
             value={formData.phoneNumber}
             onChangeText={(text) => updateFormData('phoneNumber', text)}
             keyboardType="phone-pad"

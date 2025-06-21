@@ -244,7 +244,7 @@ const Assets: React.FC = () => {
         <View className="flex-row items-center justify-between mb-6">
           <View>
             <Text className="text-gray-900 text-3xl font-black">
-              Trading Commodities 📦
+              Assets
             </Text>
             <Text className="text-gray-600 text-base mt-1">
               Invest in high-demand products

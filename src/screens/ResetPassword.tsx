@@ -72,7 +72,7 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({navigation, route}) => {
             text: 'Continue',
             onPress: () => navigation.navigate('OTPVerification', {
               email: email,
-              phoneNumber: '+91 98765 43210', // You might want to get this from user input
+              phoneNumber: '98765 43210', // You might want to get this from user input
               fromScreen: 'resetPassword'
             })
           }]
