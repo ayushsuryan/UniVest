@@ -3,12 +3,16 @@ import {View, Text, ScrollView, TouchableOpacity, Switch, Alert} from 'react-nat
 import {SafeAreaView} from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import Wallet from '../../Components/Wallet';
+import { useAuth } from '../../context/AuthContext';
 
 const Profile: React.FC = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [marketAlertsEnabled, setMarketAlertsEnabled] = useState(true);
   const [showWallet, setShowWallet] = useState(false);
+
+  // Get user data and logout function from AuthContext
+  const { user, logout, isLoading } = useAuth();
 
   const userStats = {
     totalInvested: 150000,
@@ -22,10 +26,23 @@ const Profile: React.FC = () => {
   const handleLogout = () => {
     Alert.alert(
       'Confirm Logout',
-      'Are you sure you want to logout from your commodity trading account?',
+      'Are you sure you want to logout from your account?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Logout', style: 'destructive', onPress: () => console.log('Logged out') },
+        { 
+          text: 'Logout', 
+          style: 'destructive', 
+          onPress: async () => {
+            try {
+              await logout();
+              // Navigation will be handled automatically by AuthGuard
+              Alert.alert('Logged Out', 'You have been successfully logged out.');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to logout. Please try again.');
+              console.error('Logout error:', error);
+            }
+          }
+        },
       ]
     );
   };
@@ -173,18 +190,26 @@ const Profile: React.FC = () => {
                 className="w-20 h-20 rounded-3xl items-center justify-center mr-4 shadow-sm"
                 style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}
               >
-                <Text className="text-3xl">👤</Text>
+                {user?.profilePicture ? (
+                  <Text className="text-3xl">👤</Text>
+                ) : (
+                  <Text className="text-3xl">
+                    {user?.firstName ? user.firstName.charAt(0).toUpperCase() : '👤'}
+                  </Text>
+                )}
               </View>
               <View className="flex-1">
                 <Text className="text-gray-900 text-2xl font-black">
-                  Commodity Trader
+                  {user ? `${user.firstName} ${user.lastName}` : 'Commodity Trader'}
                 </Text>
                 <Text className="text-gray-500 text-base">
-                  trader@commodityinvest.com
+                  {user?.email || 'trader@commodityinvest.com'}
                 </Text>
                 <View className="flex-row items-center mt-2">
-                  <View className="w-3 h-3 bg-green-500 rounded-full mr-2" />
-                  <Text className="text-green-600 text-sm font-bold">Verified Trader</Text>
+                  <View className={`w-3 h-3 ${user?.isEmailVerified ? 'bg-green-500' : 'bg-yellow-500'} rounded-full mr-2`} />
+                  <Text className={`text-sm font-bold ${user?.isEmailVerified ? 'text-green-600' : 'text-yellow-600'}`}>
+                    {user?.isEmailVerified ? 'Verified Trader' : 'Email Verification Pending'}
+                  </Text>
                 </View>
               </View>
             </View>
@@ -320,22 +345,40 @@ const Profile: React.FC = () => {
         <View className="px-6 pb-24">
           <TouchableOpacity
             onPress={handleLogout}
+            disabled={isLoading}
             className="bg-white rounded-2xl p-4 shadow-sm border border-red-200 flex-row items-center justify-center"
             activeOpacity={0.8}
+            style={{ opacity: isLoading ? 0.7 : 1 }}
           >
-            <FeatherIcon name="log-out" size={24} color="#dc2626" />
-            <Text className="text-red-600 text-lg font-black ml-3">
-              Logout from Trading Account
-            </Text>
+            {isLoading ? (
+              <>
+                <FeatherIcon name="loader" size={24} color="#dc2626" />
+                <Text className="text-red-600 text-lg font-black ml-3">
+                  Logging Out...
+                </Text>
+              </>
+            ) : (
+              <>
+                <FeatherIcon name="log-out" size={24} color="#dc2626" />
+                <Text className="text-red-600 text-lg font-black ml-3">
+                  Logout from Trading Account
+                </Text>
+              </>
+            )}
           </TouchableOpacity>
           
           <View className="mt-6 items-center">
             <Text className="text-gray-400 text-sm text-center">
-              CommodityInvest v2.1.0
+              WealthBuilder v2.1.0
             </Text>
             <Text className="text-gray-400 text-xs text-center mt-1">
               Your investments are secured with bank-level encryption
             </Text>
+            {user && (
+              <Text className="text-gray-400 text-xs text-center mt-1">
+                Last login: {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Today'}
+              </Text>
+            )}
           </View>
         </View>
       </ScrollView>

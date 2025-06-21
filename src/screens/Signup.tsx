@@ -4,6 +4,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import CustomInput from '../Components/CustomInput';
 import CustomButton from '../Components/CustomButton';
+import { useAuth } from '../context/AuthContext';
 
 interface SignupProps {
   navigation: any;
@@ -18,7 +19,7 @@ const Signup: React.FC<SignupProps> = ({navigation}) => {
     password: '',
     confirmPassword: '',
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const { signup, isLoading } = useAuth();
   const [errors, setErrors] = useState<{[key: string]: string}>({});
 
   const updateFormData = (field: string, value: string) => {
@@ -73,18 +74,35 @@ const Signup: React.FC<SignupProps> = ({navigation}) => {
   const handleSignup = async () => {
     if (!validateForm()) return;
 
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      // Navigate to OTP verification screen
-      navigation.navigate('OTPVerification', {
+    try {
+      const result = await signup({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
         email: formData.email,
-        phoneNumber: formData.phoneNumber,
-        fromScreen: 'signup'
+        password: formData.password,
+        phone: formData.phoneNumber
       });
-    }, 2000);
+
+      if (result.success) {
+        Alert.alert(
+          'Registration Successful!',
+          'Please check your email for the verification code.',
+          [{
+            text: 'Continue',
+            onPress: () => navigation.navigate('OTPVerification', {
+              email: formData.email,
+              phoneNumber: formData.phoneNumber,
+              fromScreen: 'signup'
+            })
+          }]
+        );
+      } else {
+        Alert.alert('Registration Failed', result.message);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+      console.error('Signup error:', error);
+    }
   };
 
   return (

@@ -2,6 +2,7 @@ import React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import { AuthProvider } from './src/context/AuthContext';
 import Landing from './src/screens/Landing';
 import Login from './src/screens/Login';
 import Signup from './src/screens/Signup';
@@ -32,7 +33,7 @@ const DashboardTabs = () => {
   );
 };
 
-const App: React.FC = () => {
+const AppNavigator: React.FC = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator
@@ -48,6 +49,14 @@ const App: React.FC = () => {
         <Stack.Screen name="Dashboard" component={DashboardTabs} />
       </Stack.Navigator>
     </NavigationContainer>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppNavigator />
+    </AuthProvider>
   );
 };
 

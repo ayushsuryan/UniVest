@@ -2,6 +2,7 @@ import React, {useState} from 'react';
 import {View, Text, TouchableOpacity, Alert, ScrollView} from 'react-native';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import CustomInput from '../Components/CustomInput';
+import { useAuth } from '../context/AuthContext';
 
 interface LoginProps {
   navigation: any;
@@ -10,8 +11,9 @@ interface LoginProps {
 const Login: React.FC<LoginProps> = ({navigation}) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{email?: string; password?: string}>({});
+
+  const { login, isLoading } = useAuth();
 
   const setTestCredentials = () => {
     setEmail('investor@wealthbuilder.com');
@@ -40,17 +42,45 @@ const Login: React.FC<LoginProps> = ({navigation}) => {
   const handleLogin = async () => {
     if (!validateForm()) return;
 
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      if (email === 'investor@wealthbuilder.com' && password === 'invest123') {
-        navigation.navigate('Dashboard');
+    try {
+      const result = await login(email, password);
+
+      if (result.success) {
+        Alert.alert(
+          'Login Successful!',
+          `Welcome back, ${result.user?.firstName}!`,
+          [{
+            text: 'Continue',
+            onPress: () => navigation.navigate('Dashboard')
+          }]
+        );
       } else {
-        Alert.alert('Login Failed', 'Invalid credentials. Use investor@wealthbuilder.com / invest123');
+        if (result.isEmailNotVerified) {
+          Alert.alert(
+            'Email Not Verified',
+            'Please verify your email address first.',
+            [
+              {
+                text: 'Verify Now',
+                onPress: () => navigation.navigate('OTPVerification', {
+                  email: email,
+                  fromScreen: 'login'
+                })
+              },
+              {
+                text: 'Cancel',
+                style: 'cancel'
+              }
+            ]
+          );
+        } else {
+          Alert.alert('Login Failed', result.message);
+        }
       }
-    }, 2000);
+    } catch (error) {
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+      console.error('Login error:', error);
+    }
   };
 
   return (
@@ -94,43 +124,7 @@ const Login: React.FC<LoginProps> = ({navigation}) => {
           </Text>
         </View>
 
-        {/* Demo Credentials Card */}
-        <View 
-          className="rounded-2xl p-6 mb-8 border border-emerald-100 shadow-sm"
-          style={{ backgroundColor: 'rgba(16, 185, 129, 0.05)' }}
-        >
-          <View className="flex-row items-center mb-3">
-            <View
-              className="rounded-xl p-2 mr-3"
-              style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}
-            >
-              <FeatherIcon name="info" size={18} color="#059669" />
-            </View>
-            <Text className="text-emerald-800 font-bold text-lg">Demo Account</Text>
-          </View>
-          <View className="space-y-2">
-            <View className="flex-row items-center">
-              <FeatherIcon name="mail" size={14} color="#065f46" className="mr-2" />
-              <Text onPress={setTestCredentials} className="text-emerald-700 text-sm font-medium ml-2">
-                investor@wealthbuilder.com
-              </Text>
-            </View>
-            <View className="flex-row items-center">
-              <FeatherIcon name="lock" size={14} color="#065f46" className="mr-2" />
-              <Text className="text-emerald-700 text-sm font-medium ml-2">
-                invest123
-              </Text>
-            </View>
-          </View>
-          <View
-            className="rounded-xl px-4 py-2 mt-4 border border-emerald-200"
-            style={{ backgroundColor: 'rgba(255, 255, 255, 0.7)' }}
-          >
-            <Text className="text-emerald-600 text-xs text-center font-medium">
-              💰 Portfolio Value: ₹12,45,000 • Returns: +18.5%
-            </Text>
-          </View>
-        </View>
+    
 
         {/* Form */}
         <View className="mb-8">

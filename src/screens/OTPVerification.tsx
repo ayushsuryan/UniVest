@@ -2,6 +2,7 @@ import React, {useState, useEffect, useRef} from 'react';
 import {View, Text, TouchableOpacity, TextInput, Alert} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
+import { useAuth } from '../context/AuthContext';
 
 interface OTPVerificationProps {
   navigation: any;
@@ -11,10 +12,11 @@ interface OTPVerificationProps {
 const OTPVerification: React.FC<OTPVerificationProps> = ({navigation, route}) => {
   const {email, phoneNumber, fromScreen} = route.params || {};
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [isLoading, setIsLoading] = useState(false);
   const [timeLeft, setTimeLeft] = useState(60);
   const [canResend, setCanResend] = useState(false);
   const inputRefs = useRef<(TextInput | null)[]>([]);
+
+  const { verifyOTP, resendOTP, isLoading } = useAuth();
 
   useEffect(() => {
     if (timeLeft > 0) {
@@ -47,43 +49,73 @@ const OTPVerification: React.FC<OTPVerificationProps> = ({navigation, route}) =>
   const handleVerifyOTP = async () => {
     const otpString = otp.join('');
     if (otpString.length !== 6) {
-      Alert.alert('Invalid OTP', 'Please enter all 6 digits');
+      Alert.alert('Invalid OTP', 'Please enter the complete 6-digit code.');
       return;
     }
 
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      if (otpString === '123456') {
-        if (fromScreen === 'signup') {
-          Alert.alert(
-            'Account Created!', 
-            'Your account has been successfully created.',
-            [
-              {
-                text: 'Continue',
-                onPress: () => navigation.navigate('Dashboard')
+    try {
+      const result = await verifyOTP(email, otpString);
+
+      if (result.success) {
+        Alert.alert(
+          'Verification Successful!',
+          result.message,
+          [{
+            text: 'Continue',
+            onPress: () => {
+              if (fromScreen === 'signup') {
+                // For signup, navigate to login after successful verification
+                navigation.navigate('Login');
+              } else if (fromScreen === 'resetPassword') {
+                // For password reset, pass the OTP to the reset password screen
+                navigation.navigate('ResetPassword', { 
+                  email: email,
+                  otp: otpString,
+                  step: 'resetPassword' 
+                });
+              } else {
+                // Default navigation
+                navigation.goBack();
               }
-            ]
-          );
-        } else if (fromScreen === 'resetPassword') {
-          navigation.navigate('ResetPassword', {email, phoneNumber, verified: true});
-        } else {
-          navigation.navigate('Dashboard');
-        }
+            }
+          }]
+        );
       } else {
-        Alert.alert('Invalid OTP', 'Please enter the correct OTP: 123456');
+        if (result.isInvalidOTP) {
+          Alert.alert(
+            'Invalid Code',
+            'The verification code is incorrect. Please check and try again.',
+            [{
+              text: 'Try Again',
+              onPress: () => setOtp(['', '', '', '', '', ''])
+            }]
+          );
+        } else {
+          Alert.alert('Verification Failed', result.message);
+        }
       }
-    }, 2000);
+    } catch (error) {
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+      console.error('OTP verification error:', error);
+    }
   };
 
-  const handleResendOTP = () => {
-    setTimeLeft(60);
-    setCanResend(false);
-    setOtp(['', '', '', '', '', '']);
-    Alert.alert('OTP Sent', 'A new OTP has been sent to your registered email and phone number.');
+  const handleResendOTP = async () => {
+    try {
+      const result = await resendOTP(email);
+      
+      if (result.success) {
+        setTimeLeft(60);
+        setCanResend(false);
+        setOtp(['', '', '', '', '', '']);
+        Alert.alert('OTP Sent', result.message);
+      } else {
+        Alert.alert('Resend Failed', result.message);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to resend OTP. Please try again.');
+      console.error('Resend OTP error:', error);
+    }
   };
 
   const maskedEmail = email ? email.replace(/(.{2})(.*)(@.*)/, '$1***$3') : '';

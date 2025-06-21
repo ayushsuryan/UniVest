@@ -2,6 +2,7 @@ import React, {useState} from 'react';
 import {View, Text, ScrollView, TouchableOpacity, Image} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
+import { useAuth } from '../../context/AuthContext';
 
 interface Investment {
   id: string;
@@ -20,6 +21,9 @@ const Home: React.FC = () => {
   const [totalInvested] = useState(125000);
   const [totalReturns] = useState(18500);
   const [activeInvestments] = useState(6);
+
+  // Get user data from AuthContext
+  const { user } = useAuth();
 
   const recentInvestments: Investment[] = [
     {
@@ -145,7 +149,9 @@ const Home: React.FC = () => {
           <View className="flex-row items-center justify-between mb-8">
             <View>
               <Text className="text-gray-500 text-base">Welcome back,</Text>
-              <Text className="text-gray-900 text-2xl font-black">Commodity Trader 👋</Text>
+              <Text className="text-gray-900 text-2xl font-black">
+                {user ? `${user.firstName} ${user.lastName}` : 'Commodity Trader'} 👋
+              </Text>
             </View>
             <TouchableOpacity
               className="rounded-2xl p-3 bg-white shadow-sm border border-gray-100"

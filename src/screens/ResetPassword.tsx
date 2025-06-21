@@ -3,6 +3,7 @@ import {View, Text, TouchableOpacity, Alert, ScrollView} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import CustomInput from '../Components/CustomInput';
+import { useAuth } from '../context/AuthContext';
 
 interface ResetPasswordProps {
   navigation: any;
@@ -12,7 +13,7 @@ interface ResetPasswordProps {
 const ResetPassword: React.FC<ResetPasswordProps> = ({navigation, route}) => {
   const {email: verifiedEmail, phoneNumber: verifiedPhone, verified} = route?.params || {};
   const [step, setStep] = useState(verified ? 'resetPassword' : 'requestReset');
-  const [isLoading, setIsLoading] = useState(false);
+  const { forgotPassword, resetPassword, isLoading } = useAuth();
   
   // For requesting reset
   const [email, setEmail] = useState(verifiedEmail || '');
@@ -60,38 +61,84 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({navigation, route}) => {
   const handleRequestReset = async () => {
     if (!validateEmail()) return;
 
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      navigation.navigate('OTPVerification', {
-        email: email,
-        phoneNumber: '+91 98765 43210', // Mock phone for demo
-        fromScreen: 'resetPassword'
-      });
-    }, 2000);
+    try {
+      const result = await forgotPassword(email);
+
+      if (result.success) {
+        Alert.alert(
+          'Reset Code Sent',
+          result.message,
+          [{
+            text: 'Continue',
+            onPress: () => navigation.navigate('OTPVerification', {
+              email: email,
+              phoneNumber: '+91 98765 43210', // You might want to get this from user input
+              fromScreen: 'resetPassword'
+            })
+          }]
+        );
+      } else {
+        Alert.alert('Failed to Send Code', result.message);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+      console.error('Forgot password error:', error);
+    }
   };
 
   const handleResetPassword = async () => {
     if (!validatePasswordForm()) return;
 
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      Alert.alert(
-        'Password Reset Successful!',
-        'Your password has been successfully reset. You can now log in with your new password.',
-        [
-          {
+    try {
+      // In the real implementation, the OTP should come from the OTPVerification screen
+      // For now, we'll need to modify the flow to properly pass the OTP
+      // This is a limitation of the current flow - we need the OTP from verification
+      
+      // Check if we have the OTP from the verification process
+      // In a real app, this would be passed from the OTPVerification screen
+      const otp = route?.params?.otp || ''; // This should be passed from OTP verification
+      
+      if (!otp) {
+        Alert.alert(
+          'Verification Required',
+          'Please complete the OTP verification first.',
+          [{
+            text: 'Go Back',
+            onPress: () => setStep('requestReset')
+          }]
+        );
+        return;
+      }
+      
+      const result = await resetPassword(verifiedEmail || email, otp, newPassword);
+
+      if (result.success) {
+        Alert.alert(
+          'Password Reset Successful!',
+          result.message,
+          [{
             text: 'Go to Login',
             onPress: () => navigation.navigate('Login')
-          }
-        ]
-      );
-    }, 2000);
+          }]
+        );
+      } else {
+        if (result.isInvalidOTP) {
+          Alert.alert(
+            'Invalid Code',
+            'The verification code is invalid or expired. Please request a new one.',
+            [{
+              text: 'Request New Code',
+              onPress: () => setStep('requestReset')
+            }]
+          );
+        } else {
+          Alert.alert('Reset Failed', result.message);
+        }
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+      console.error('Reset password error:', error);
+    }
   };
 
   if (step === 'resetPassword' || verified) {
