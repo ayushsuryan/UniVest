@@ -21,7 +21,7 @@ const router = express.Router();
 // Rate limiting for auth endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 requests per windowMs
+  max: 20, // limit each IP to 20 requests per windowMs (increased from 5)
   message: {
     success: false,
     message: 'Too many authentication attempts, please try again later.'
@@ -30,7 +30,7 @@ const authLimiter = rateLimit({
 
 const otpLimiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 3, // limit each IP to 3 OTP requests per 5 minutes
+  max: 10, // limit each IP to 10 OTP requests per 5 minutes (increased from 3)
   message: {
     success: false,
     message: 'Too many OTP requests, please try again later.'
@@ -42,46 +42,66 @@ const otpLimiter = rateLimit({
 // @access  Public
 router.post('/register', authLimiter, validateRegistration, asyncHandler(async (req, res) => {
   const { firstName, lastName, email, password, phone } = req.body;
+  
+  console.log(`📝 Registration attempt for email: ${email}`);
 
   // Check if user already exists
   const existingUser = await User.findByEmail(email);
   if (existingUser) {
+    console.log(`❌ Registration failed - User already exists: ${email}`);
     return res.status(400).json({
       success: false,
       message: 'User with this email already exists'
     });
   }
 
-  // Create user
-  const user = await User.create({
-    firstName,
-    lastName,
-    email,
-    password,
-    phone: phone || undefined
-  });
-
-  // Generate OTP for email verification
-  const otpLength = parseInt(process.env.OTP_LENGTH) || 6;
-  const otpExpiry = parseInt(process.env.OTP_EXPIRES_IN) || 10;
-  const otp = OTPGenerator.generateSecure(otpLength);
-
-  // Save OTP to database
-  await OTP.createOTP(email, 'email_verification', otp, otpExpiry);
-
-  // Send verification email
   try {
-    await emailService.sendOTP(email, otp, 'email_verification');
-  } catch (error) {
-    console.error('Failed to send verification email:', error);
-    // Don't fail registration if email fails
-  }
+    // Create user
+    const user = await User.create({
+      firstName,
+      lastName,
+      email,
+      password,
+      phone: phone || undefined
+    });
+    
+    console.log(`✅ User created successfully: ${email}`);
 
-  res.status(201).json({
-    success: true,
-    message: 'User registered successfully. Please check your email for verification code.',
-    user: user.getPublicProfile()
-  });
+    // Generate OTP for email verification
+    const otpLength = parseInt(process.env.OTP_LENGTH) || 6;
+    const otpExpiry = parseInt(process.env.OTP_EXPIRES_IN) || 10;
+    const otp = OTPGenerator.generateSecure(otpLength);
+
+    // Save OTP to database
+    await OTP.createOTP(email, 'email_verification', otp, otpExpiry);
+    console.log(`📧 OTP generated for email: ${email}`);
+
+    // Send verification email
+    try {
+      await emailService.sendOTP(email, otp, 'email_verification');
+      console.log(`📬 Verification email sent to: ${email}`);
+    } catch (error) {
+      console.error('Failed to send verification email:', error);
+      // Don't fail registration if email fails - just log it
+    }
+
+    const response = {
+      success: true,
+      message: 'User registered successfully. Please check your email for verification code.',
+      user: user.getPublicProfile()
+    };
+    
+    console.log(`🎉 Registration successful for: ${email}`);
+    res.status(201).json(response);
+    
+  } catch (error) {
+    console.error(`❌ Registration error for ${email}:`, error);
+    res.status(500).json({
+      success: false,
+      message: 'Registration failed. Please try again.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
 }));
 
 // @desc    Verify email with OTP
