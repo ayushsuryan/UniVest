@@ -160,7 +160,7 @@ router.get('/portfolio-stats', protect, asyncHandler(async (req, res) => {
   });
 }));
 
-// @desc    Cash out investment early
+// @desc    Cash out investment early (with penalty)
 // @route   POST /api/investments/:id/cash-out
 // @access  Private
 router.post('/:id/cash-out', protect, asyncHandler(async (req, res) => {
@@ -184,21 +184,38 @@ router.post('/:id/cash-out', protect, asyncHandler(async (req, res) => {
     });
   }
 
-  // Check if already matured
-  if (investment.getDaysLeft() <= 0) {
-    return res.status(400).json({
-      success: false,
-      message: 'Investment has already matured. Please use regular cash out.'
+  // Check if investment has matured
+  const daysLeft = investment.getDaysLeft();
+  
+  if (daysLeft <= 0) {
+    // Investment has matured - no penalty
+    investment.status = 'matured';
+    await investment.save();
+    
+    // Add full current value back to user balance
+    const user = await User.findById(req.user._id);
+    user.balance += investment.currentValue;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Matured investment cashed out successfully (no penalty)',
+      data: {
+        originalAmount: investment.currentValue,
+        penaltyAmount: 0,
+        finalAmount: investment.currentValue,
+        newBalance: user.balance,
+        isMatured: true
+      }
     });
+    return;
   }
 
-  // Calculate penalty
+  // Early cashout - apply penalty
   const { penaltyAmount, finalAmount } = investment.calculateCashOutPenalty();
 
   // Update investment
   investment.status = 'cashed_out';
-  investment.currentValue = finalAmount;
-  investment.totalReturns = finalAmount - investment.investedAmount;
   investment.cashOutDetails = {
     cashOutDate: new Date(),
     penaltyAmount,
@@ -213,12 +230,69 @@ router.post('/:id/cash-out', protect, asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    message: 'Investment cashed out successfully',
+    message: 'Investment cashed out early with penalty',
     data: {
       originalAmount: investment.currentValue,
       penaltyAmount,
       finalAmount,
-      newBalance: user.balance
+      newBalance: user.balance,
+      isMatured: false
+    }
+  });
+}));
+
+// @desc    Cash out matured investment (no penalty)
+// @route   POST /api/investments/:id/cash-out-matured
+// @access  Private
+router.post('/:id/cash-out-matured', protect, asyncHandler(async (req, res) => {
+  // Find investment
+  const investment = await Investment.findOne({
+    _id: req.params.id,
+    user: req.user._id
+  }).populate('asset');
+
+  if (!investment) {
+    return res.status(404).json({
+      success: false,
+      message: 'Investment not found'
+    });
+  }
+
+  if (investment.status !== 'active' && investment.status !== 'matured') {
+    return res.status(400).json({
+      success: false,
+      message: 'Investment is not eligible for cashout'
+    });
+  }
+
+  // Check if investment has actually matured
+  const daysLeft = investment.getDaysLeft();
+  
+  if (daysLeft > 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'Investment has not matured yet. Use early cashout with penalty.'
+    });
+  }
+
+  // Mark as matured and cash out without penalty
+  investment.status = 'matured';
+  await investment.save();
+
+  // Add full current value to user balance
+  const user = await User.findById(req.user._id);
+  user.balance += investment.currentValue;
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'Matured investment cashed out successfully',
+    data: {
+      originalAmount: investment.currentValue,
+      penaltyAmount: 0,
+      finalAmount: investment.currentValue,
+      newBalance: user.balance,
+      isMatured: true
     }
   });
 }));
