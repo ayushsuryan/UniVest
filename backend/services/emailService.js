@@ -2,11 +2,38 @@ const nodemailer = require('nodemailer');
 
 class EmailService {
   constructor() {
+    // Use direct SMTP configuration instead of service
     this.transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false, // true for 465, false for other ports like 587
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
+      },
+      // Reduced timeouts to prevent hanging
+      connectionTimeout: 10000, // 10 seconds
+      greetingTimeout: 5000,    // 5 seconds  
+      socketTimeout: 10000,     // 10 seconds
+      tls: {
+        rejectUnauthorized: false
+      }
+    });
+
+    // Alternative configuration for fallback
+    this.fallbackTransporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true, // true for 465
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      },
+      connectionTimeout: 10000,
+      greetingTimeout: 5000,
+      socketTimeout: 10000,
+      tls: {
+        rejectUnauthorized: false
       }
     });
   }
@@ -14,16 +41,56 @@ class EmailService {
   // Verify email configuration
   async verifyConnection() {
     try {
-      await this.transporter.verify();
-      console.log('Email service is ready to send emails');
+      await Promise.race([
+        this.transporter.verify(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Connection verification timeout')), 8000)
+        )
+      ]);
+      console.log('✅ Email service is ready to send emails');
       return true;
     } catch (error) {
-      console.error('Email service configuration error:', error);
+      console.error('❌ Email service configuration error:', error.message);
       return false;
     }
   }
 
-  // Send OTP email
+  // Try sending with fallback and timeout
+  async sendEmailWithFallback(mailOptions) {
+    try {
+      // Try primary transporter first with timeout
+      const info = await Promise.race([
+        this.transporter.sendMail(mailOptions),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Primary email timeout')), 12000)
+        )
+      ]);
+      console.log('✅ Email sent via primary transporter:', info.messageId);
+      return { success: true, messageId: info.messageId, method: 'primary' };
+    } catch (primaryError) {
+      console.log('⚠️ Primary email failed, trying fallback:', primaryError.message);
+      
+      try {
+        // Try fallback transporter with timeout
+        const info = await Promise.race([
+          this.fallbackTransporter.sendMail(mailOptions),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Fallback email timeout')), 12000)
+          )
+        ]);
+        console.log('✅ Email sent via fallback transporter:', info.messageId);
+        return { success: true, messageId: info.messageId, method: 'fallback' };
+      } catch (fallbackError) {
+        console.error('❌ Both email methods failed');
+        console.error('Primary error:', primaryError.message);
+        console.error('Fallback error:', fallbackError.message);
+        // Don't throw error - return failure instead
+        return { success: false, error: fallbackError.message };
+      }
+    }
+  }
+
+  // Send OTP email with better error handling
   async sendOTP(email, otp, type = 'verification') {
     const subject = this.getOTPSubject(type);
     const html = this.getOTPTemplate(otp, type);
@@ -36,15 +103,23 @@ class EmailService {
     };
 
     try {
-      const info = await this.transporter.sendMail(mailOptions);
-      console.log('OTP email sent successfully:', info.messageId);
-      return {
-        success: true,
-        messageId: info.messageId
-      };
+      const result = await this.sendEmailWithFallback(mailOptions);
+      if (result.success) {
+        console.log(`📧 OTP email sent successfully via ${result.method}:`, result.messageId);
+        return {
+          success: true,
+          messageId: result.messageId,
+          method: result.method
+        };
+      } else {
+        console.error('❌ Failed to send OTP email:', result.error);
+        // Return false instead of throwing error
+        return { success: false, error: result.error };
+      }
     } catch (error) {
-      console.error('Error sending OTP email:', error);
-      throw new Error('Failed to send OTP email');
+      console.error('❌ Failed to send OTP email:', error.message);
+      // Return false instead of throwing error
+      return { success: false, error: error.message };
     }
   }
 
@@ -61,14 +136,19 @@ class EmailService {
     };
 
     try {
-      const info = await this.transporter.sendMail(mailOptions);
-      console.log('Welcome email sent successfully:', info.messageId);
+      const info = await Promise.race([
+        this.transporter.sendMail(mailOptions),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Welcome email timeout')), 10000)
+        )
+      ]);
+      console.log('✅ Welcome email sent successfully:', info.messageId);
       return {
         success: true,
         messageId: info.messageId
       };
     } catch (error) {
-      console.error('Error sending welcome email:', error);
+      console.error('❌ Error sending welcome email:', error.message);
       // Don't throw error for welcome email failure
       return {
         success: false,

@@ -77,18 +77,28 @@ router.post('/register', authLimiter, validateRegistration, asyncHandler(async (
     console.log(`📧 OTP generated for email: ${email}`);
 
     // Send verification email
+    let emailSent = false;
     try {
-      await emailService.sendOTP(email, otp, 'email_verification');
-      console.log(`📬 Verification email sent to: ${email}`);
+      const emailResult = await emailService.sendOTP(email, otp, 'email_verification');
+      if (emailResult && emailResult.success) {
+        console.log(`📬 Verification email sent to: ${email}`);
+        emailSent = true;
+      } else {
+        console.error('Failed to send verification email:', emailResult?.error || 'Unknown error');
+        emailSent = false;
+      }
     } catch (error) {
-      console.error('Failed to send verification email:', error);
-      // Don't fail registration if email fails - just log it
+      console.error('Failed to send verification email:', error.message);
+      emailSent = false;
     }
 
     const response = {
       success: true,
-      message: 'User registered successfully. Please check your email for verification code.',
-      user: user.getPublicProfile()
+      message: emailSent 
+        ? 'User registered successfully. Please check your email for verification code.'
+        : 'User registered successfully. Email service is temporarily unavailable, but you can still verify your account.',
+      user: user.getPublicProfile(),
+      emailSent: emailSent
     };
     
     console.log(`🎉 Registration successful for: ${email}`);
@@ -187,12 +197,28 @@ router.post('/resend-verification-otp', otpLimiter, validateEmail, asyncHandler(
   await OTP.createOTP(email, 'email_verification', otp, otpExpiry);
 
   // Send OTP email
-  await emailService.sendOTP(email, otp, 'email_verification');
-
-  res.status(200).json({
-    success: true,
-    message: 'Verification OTP sent successfully'
-  });
+  try {
+    const emailResult = await emailService.sendOTP(email, otp, 'email_verification');
+    if (emailResult && emailResult.success) {
+      res.status(200).json({
+        success: true,
+        message: 'Verification OTP sent successfully'
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to send OTP email. Please try again later.',
+        error: emailResult?.error || 'Email service unavailable'
+      });
+    }
+  } catch (error) {
+    console.error('Error sending OTP:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send OTP email. Please try again later.',
+      error: error.message
+    });
+  }
 }));
 
 // @desc    Login user
