@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import AuthService from '../graphql/auth';
+import AuthService from '../connections/auth';
 
 // Types
 interface User {
