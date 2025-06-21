@@ -2,204 +2,149 @@ const express = require('express');
 const router = express.Router();
 const Asset = require('../models/Asset');
 const User = require('../models/User');
-const { auth } = require('../middleware/auth');
+const { protect, adminOnly, optionalAuth } = require('../middleware/auth');
+const { asyncHandler } = require('../middleware/errorHandler');
 
-// Get all active assets
-router.get('/', async (req, res) => {
-  try {
-    const { category, demand } = req.query;
-    let query = { isActive: true };
-    
-    if (category && category !== 'all') {
-      query.category = category;
+// Get all active assets (public route with optional auth)
+router.get('/', optionalAuth, asyncHandler(async (req, res) => {
+  const { category, demand } = req.query;
+  let query = { isActive: true };
+  
+  if (category && category !== 'all') {
+    query.category = category;
+  }
+  
+  if (demand && demand !== 'all') {
+    if (demand === 'high') {
+      query.currentDemand = { $in: ['High', 'Very High'] };
+    } else if (demand === 'medium') {
+      query.currentDemand = 'Medium';
+    } else if (demand === 'low') {
+      query.currentDemand = 'Low';
     }
-    
-    if (demand && demand !== 'all') {
-      if (demand === 'high') {
-        query.currentDemand = { $in: ['High', 'Very High'] };
-      } else if (demand === 'medium') {
-        query.currentDemand = 'Medium';
-      } else if (demand === 'low') {
-        query.currentDemand = 'Low';
-      }
-    }
-    
-    const assets = await Asset.find(query)
-      .populate('createdBy', 'firstName lastName email')
-      .sort({ createdAt: -1 });
-    
-    res.json({
-      success: true,
-      data: assets,
-      count: assets.length
-    });
-  } catch (error) {
-    res.status(500).json({
+  }
+  
+  const assets = await Asset.find(query)
+    .populate('createdBy', 'firstName lastName email')
+    .sort({ createdAt: -1 });
+  
+  res.json({
+    success: true,
+    data: assets,
+    count: assets.length
+  });
+}));
+
+// Get single asset by ID (public route with optional auth)
+router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
+  const asset = await Asset.findById(req.params.id)
+    .populate('createdBy', 'firstName lastName email');
+  
+  if (!asset || !asset.isActive) {
+    return res.status(404).json({
       success: false,
-      message: 'Error fetching assets',
-      error: error.message
+      message: 'Asset not found'
     });
   }
-});
+  
+  res.json({
+    success: true,
+    data: asset
+  });
+}));
 
-// Get single asset by ID
-router.get('/:id', async (req, res) => {
-  try {
-    const asset = await Asset.findById(req.params.id)
-      .populate('createdBy', 'firstName lastName email');
-    
-    if (!asset || !asset.isActive) {
-      return res.status(404).json({
-        success: false,
-        message: 'Asset not found'
-      });
-    }
-    
-    res.json({
-      success: true,
-      data: asset
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching asset',
-      error: error.message
-    });
-  }
-});
-
-// Create new asset (Admin only - for now, we'll create without auth)
-router.post('/', async (req, res) => {
-  try {
-    const {
-      name,
-      price,
-      maturityPeriod,
-      hourlyReturnPercentage,
-      image,
-      hourlyReturnReferralPercentage,
-      category,
-      minInvestment,
-      currentDemand,
-      createdBy
-    } = req.body;
-    
-    // For now, we'll use a default admin user ID or create assets without specific user
-    // In production, you should implement proper admin authentication
-    let adminUser = await User.findOne({ email: 'admin@finance.com' });
-    if (!adminUser) {
-      // Create a default admin user for asset creation
-      adminUser = new User({
-        firstName: 'Admin',
-        lastName: 'User',
-        email: 'admin@finance.com',
-        password: 'admin123', // This will be hashed by the pre-save hook
-        isEmailVerified: true
-      });
-      await adminUser.save();
-    }
-    
-    const asset = new Asset({
-      name,
-      price,
-      maturityPeriod,
-      hourlyReturnPercentage,
-      image,
-      hourlyReturnReferralPercentage,
-      category,
-      minInvestment,
-      currentDemand: currentDemand || 'Medium',
-      createdBy: createdBy || adminUser._id
-    });
-    
-    await asset.save();
-    await asset.populate('createdBy', 'firstName lastName email');
-    
-    res.status(201).json({
-      success: true,
-      message: 'Asset created successfully',
-      data: asset
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: 'Error creating asset',
-      error: error.message
-    });
-  }
-});
+// Create new asset (Admin only)
+router.post('/', adminOnly, asyncHandler(async (req, res) => {
+  const {
+    name,
+    price,
+    maturityPeriod,
+    hourlyReturnPercentage,
+    image,
+    hourlyReturnReferralPercentage,
+    category,
+    minInvestment,
+    currentDemand
+  } = req.body;
+  
+  const asset = new Asset({
+    name,
+    price,
+    maturityPeriod,
+    hourlyReturnPercentage,
+    image,
+    hourlyReturnReferralPercentage,
+    category,
+    minInvestment,
+    currentDemand: currentDemand || 'Medium',
+    createdBy: req.user._id // Use authenticated admin user
+  });
+  
+  await asset.save();
+  await asset.populate('createdBy', 'firstName lastName email');
+  
+  res.status(201).json({
+    success: true,
+    message: 'Asset created successfully',
+    data: asset
+  });
+}));
 
 // Update asset (Admin only)
-router.put('/:id', async (req, res) => {
-  try {
-    const asset = await Asset.findById(req.params.id);
-    
-    if (!asset) {
-      return res.status(404).json({
-        success: false,
-        message: 'Asset not found'
-      });
-    }
-    
-    const allowedUpdates = [
-      'name', 'price', 'maturityPeriod', 'hourlyReturnPercentage',
-      'image', 'hourlyReturnReferralPercentage', 'category',
-      'minInvestment', 'currentDemand', 'isActive'
-    ];
-    
-    allowedUpdates.forEach(field => {
-      if (req.body[field] !== undefined) {
-        asset[field] = req.body[field];
-      }
-    });
-    
-    await asset.save();
-    await asset.populate('createdBy', 'firstName lastName email');
-    
-    res.json({
-      success: true,
-      message: 'Asset updated successfully',
-      data: asset
-    });
-  } catch (error) {
-    res.status(400).json({
+router.put('/:id', adminOnly, asyncHandler(async (req, res) => {
+  const asset = await Asset.findById(req.params.id);
+  
+  if (!asset) {
+    return res.status(404).json({
       success: false,
-      message: 'Error updating asset',
-      error: error.message
+      message: 'Asset not found'
     });
   }
-});
+  
+  const allowedUpdates = [
+    'name', 'price', 'maturityPeriod', 'hourlyReturnPercentage',
+    'image', 'hourlyReturnReferralPercentage', 'category',
+    'minInvestment', 'currentDemand', 'isActive'
+  ];
+  
+  allowedUpdates.forEach(field => {
+    if (req.body[field] !== undefined) {
+      asset[field] = req.body[field];
+    }
+  });
+  
+  await asset.save();
+  await asset.populate('createdBy', 'firstName lastName email');
+  
+  res.json({
+    success: true,
+    message: 'Asset updated successfully',
+    data: asset
+  });
+}));
 
 // Delete asset (Admin only - soft delete)
-router.delete('/:id', async (req, res) => {
-  try {
-    const asset = await Asset.findById(req.params.id);
-    
-    if (!asset) {
-      return res.status(404).json({
-        success: false,
-        message: 'Asset not found'
-      });
-    }
-    
-    asset.isActive = false;
-    await asset.save();
-    
-    res.json({
-      success: true,
-      message: 'Asset deleted successfully'
-    });
-  } catch (error) {
-    res.status(500).json({
+router.delete('/:id', adminOnly, asyncHandler(async (req, res) => {
+  const asset = await Asset.findById(req.params.id);
+  
+  if (!asset) {
+    return res.status(404).json({
       success: false,
-      message: 'Error deleting asset',
-      error: error.message
+      message: 'Asset not found'
     });
   }
-});
+  
+  asset.isActive = false;
+  await asset.save();
+  
+  res.json({
+    success: true,
+    message: 'Asset deleted successfully'
+  });
+}));
 
-// Seed test assets
-router.post('/seed/test-data', async (req, res) => {
+// Seed test assets (Admin only)
+router.post('/seed/test-data', adminOnly, asyncHandler(async (req, res) => {
   try {
     // Clear existing assets first (optional - for testing)
     if (req.body.clearExisting || req.query.clear) {
@@ -326,23 +271,15 @@ router.post('/seed/test-data', async (req, res) => {
       error: error.message
     });
   }
-});
+}));
 
-// Get asset categories
-router.get('/meta/categories', async (req, res) => {
-  try {
-    const categories = await Asset.distinct('category', { isActive: true });
-    res.json({
-      success: true,
-      data: categories
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching categories',
-      error: error.message
-    });
-  }
-});
+// Get asset categories (public route)
+router.get('/meta/categories', asyncHandler(async (req, res) => {
+  const categories = await Asset.distinct('category', { isActive: true });
+  res.json({
+    success: true,
+    data: categories
+  });
+}));
 
 module.exports = router; 

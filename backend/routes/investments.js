@@ -4,7 +4,7 @@ const Investment = require('../models/Investment');
 const Asset = require('../models/Asset');
 const User = require('../models/User');
 const { asyncHandler } = require('../middleware/errorHandler');
-const { protect } = require('../middleware/auth');
+const { protect, verifiedUserOnly } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -20,8 +20,8 @@ const investmentLimiter = rateLimit({
 
 // @desc    Create new investment
 // @route   POST /api/investments
-// @access  Private
-router.post('/', protect, investmentLimiter, asyncHandler(async (req, res) => {
+// @access  Private (Email verified users only)
+router.post('/', verifiedUserOnly, investmentLimiter, asyncHandler(async (req, res) => {
   const { assetId, amount } = req.body;
 
   // Validate input

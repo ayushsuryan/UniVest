@@ -62,6 +62,36 @@ const requireEmailVerified = (req, res, next) => {
   next();
 };
 
+// Middleware to check if user is admin
+const requireAdmin = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required'
+    });
+  }
+
+  // Check if user is admin (you can customize this logic)
+  const isAdmin = req.user.role === 'admin' || 
+                  req.user.email === 'admin@finance.com' ||
+                  req.user.isAdmin === true;
+
+  if (!isAdmin) {
+    return res.status(403).json({
+      success: false,
+      message: 'Admin access required. You do not have permission to perform this action.'
+    });
+  }
+  
+  next();
+};
+
+// Combined middleware for admin routes (auth + admin check)
+const adminOnly = [protect, requireAdmin];
+
+// Combined middleware for verified users (auth + email verification)
+const verifiedUserOnly = [protect, requireEmailVerified];
+
 // Optional auth middleware - doesn't fail if no token
 const optionalAuth = asyncHandler(async (req, res, next) => {
   let token;
@@ -122,6 +152,9 @@ const sendTokenResponse = (user, statusCode, res, message = 'Success') => {
 module.exports = {
   protect,
   requireEmailVerified,
+  requireAdmin,
+  adminOnly,
+  verifiedUserOnly,
   optionalAuth,
   generateToken,
   sendTokenResponse

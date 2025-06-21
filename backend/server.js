@@ -11,7 +11,7 @@
   const authRoutes = require('./routes/auth');
   const assetRoutes = require('./routes/assets');
   const investmentRoutes = require('./routes/investments');
-  const { errorHandler } = require('./middleware/errorHandler');
+  const { errorHandler, asyncHandler } = require('./middleware/errorHandler');
 
   const app = express();
 
@@ -59,6 +59,51 @@
   app.use('/api/auth', authRoutes);
   app.use('/api/assets', assetRoutes);
   app.use('/api/investments', investmentRoutes);
+
+  // Admin setup route (for initial admin user creation)
+  app.post('/api/admin/setup', asyncHandler(async (req, res) => {
+    const User = require('./models/User');
+    
+    // Check if admin already exists
+    const existingAdmin = await User.findOne({ 
+      $or: [
+        { email: 'admin@finance.com' },
+        { role: 'admin' },
+        { isAdmin: true }
+      ]
+    });
+    
+    if (existingAdmin) {
+      return res.status(400).json({
+        success: false,
+        message: 'Admin user already exists'
+      });
+    }
+    
+    // Create admin user
+    const adminUser = new User({
+      firstName: 'Admin',
+      lastName: 'User',
+      email: 'admin@finance.com',
+      password: 'admin123', // This will be hashed
+      isEmailVerified: true,
+      role: 'admin',
+      isAdmin: true,
+      balance: 100000 // Give admin some balance for testing
+    });
+    
+    await adminUser.save();
+    
+    res.status(201).json({
+      success: true,
+      message: 'Admin user created successfully',
+      data: {
+        email: adminUser.email,
+        name: `${adminUser.firstName} ${adminUser.lastName}`,
+        role: adminUser.role
+      }
+    });
+  }));
 
   // Health check endpoint
   app.get('/ayush/health', (req, res) => {
