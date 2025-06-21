@@ -37,8 +37,8 @@ const initializeScheduler = () => {
   console.log('✅ Summary job scheduled (runs every 6 hours)');
 
   // For testing: Optional immediate run (uncomment for testing)
-  // console.log('🧪 Running initial hourly returns calculation for testing...');
-  // setTimeout(() => calculateHourlyReturns(), 5000); // Run after 5 seconds
+  console.log('🧪 Running initial hourly returns calculation for testing...');
+  setTimeout(() => calculateHourlyReturns(), 5000); // Run after 5 seconds
 
   return {
     hourlyReturnsJob,
