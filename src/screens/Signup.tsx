@@ -4,8 +4,10 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import CustomInput from '../Components/CustomInput';
 import CustomButton from '../Components/CustomButton';
+import DebugLogs from '../Components/DebugLogs';
 import { useAuth } from '../context/AuthContext';
 import { showToast } from '../utils/toast';
+import AuthService from '../connections/auth';
 
 interface SignupProps {
   navigation: any;
@@ -22,6 +24,7 @@ const Signup: React.FC<SignupProps> = ({navigation}) => {
   });
   const { signup, isLoading } = useAuth();
   const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [debugVisible, setDebugVisible] = useState(false);
 
   const updateFormData = (field: string, value: string) => {
     setFormData(prev => ({...prev, [field]: value}));
@@ -72,10 +75,21 @@ const Signup: React.FC<SignupProps> = ({navigation}) => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const testConnectivity = async () => {
+    console.log('🧪 Testing connectivity from signup page...');
+    const result = await AuthService.testConnectivity();
+    console.log('🧪 Connectivity test result:', result);
+  };
+
   const handleSignup = async () => {
     if (!validateForm()) return;
 
     try {
+      // First test connectivity
+      await testConnectivity();
+      
+      console.log('🚀 SIGNUP PAGE - Starting signup process...');
+      
       const result = await signup({
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -83,6 +97,8 @@ const Signup: React.FC<SignupProps> = ({navigation}) => {
         password: formData.password,
         phone: formData.phoneNumber
       });
+
+      console.log('🚀 SIGNUP PAGE - Signup result:', result);
 
       if (result.success) {
         showToast.success('Please check your email for the verification code.', 'Registration Successful');
@@ -95,9 +111,11 @@ const Signup: React.FC<SignupProps> = ({navigation}) => {
           });
         }, 1000);
       } else {
+        console.log('❌ SIGNUP PAGE - Registration failed:', result.message);
         showToast.error(result.message, 'Registration Failed');
       }
     } catch (error) {
+      console.log('❌ SIGNUP PAGE - Signup error:', error);
       showToast.error('Something went wrong. Please try again.');
       console.error('Signup error:', error);
     }
@@ -155,7 +173,24 @@ const Signup: React.FC<SignupProps> = ({navigation}) => {
           </Text>
         </View>
 
-     
+        {/* Debug Controls */}
+        <View className="flex-row justify-center mb-4 space-x-2">
+          <TouchableOpacity
+            onPress={testConnectivity}
+            className="bg-blue-600 rounded-lg px-4 py-2"
+          >
+            <Text className="text-white text-sm font-medium">Test Connection</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setDebugVisible(!debugVisible)}
+            className="bg-purple-600 rounded-lg px-4 py-2"
+          >
+            <Text className="text-white text-sm font-medium">
+              {debugVisible ? 'Hide' : 'Show'} Debug
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Form */}
         <View className="mb-6">
           <View className="flex-row space-x-3 mb-4">
@@ -272,16 +307,24 @@ const Signup: React.FC<SignupProps> = ({navigation}) => {
         </View>
 
         {/* Login Link */}
-        <TouchableOpacity 
-          onPress={() => navigation.navigate('Login')}
-          className="items-center py-4"
-        >
-          <View className="flex-row items-center">
-            <Text className="text-gray-600 text-sm">Already have an account? </Text>
-            <Text className="text-emerald-600 text-sm font-bold">Sign In</Text>
-            <FeatherIcon name="arrow-right" size={16} color="#059669" className="ml-1" />
+        <View className="items-center mt-8">
+          <Text className="text-gray-600 text-sm">
+            Already have an account?{' '}
+            <Text
+              className="text-emerald-600 font-semibold"
+              onPress={() => navigation.navigate('Login')}
+            >
+              Login
+            </Text>
+          </Text>
+        </View>
+
+        {/* Debug Logs Component */}
+        {debugVisible && (
+          <View className="mt-6 mb-4">
+            <DebugLogs visible={debugVisible} onToggle={() => setDebugVisible(!debugVisible)} />
           </View>
-        </TouchableOpacity>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

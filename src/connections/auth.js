@@ -5,9 +5,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Use different URLs based on environment
 const getBaseURL = () => {
   if (__DEV__) {
-    return 'https://157.180.90.43/api'; // Physical Device - Your computer's IP
+    return 'https://jas-technologies.in/api'; // Using domain with proper SSL
   } else {
-    return 'https://157.180.90.43/api';
+    return 'https://jas-technologies.in/api'; // Using domain with proper SSL
   }
 };
 
@@ -19,10 +19,12 @@ const API = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000,
+  timeout: 15000, // Increased timeout for better reliability
+  // Ensure HTTPS is enforced
+  httpsAgent: undefined, // Let React Native handle HTTPS
 });
 
-// Request interceptor to add auth token
+// Add request logging for debugging
 API.interceptors.request.use(
   async (config) => {
     try {
@@ -30,20 +32,65 @@ API.interceptors.request.use(
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+      
+      // Log request details for debugging (only in dev mode)
+      if (__DEV__) {
+        console.log('🌐 API Request:', {
+          method: config.method?.toUpperCase(),
+          url: config.url,
+          baseURL: config.baseURL,
+          fullURL: `${config.baseURL}${config.url}`,
+          headers: config.headers,
+        });
+      }
     } catch (error) {
       console.log('Error getting token from storage:', error);
     }
     return config;
   },
   (error) => {
+    console.error('❌ Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
 
-// Response interceptor to handle token expiration
+// Response interceptor to handle token expiration and better error logging
 API.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Log successful responses in dev mode
+    if (__DEV__) {
+      console.log('✅ API Response:', {
+        status: response.status,
+        url: response.config.url,
+        data: response.data
+      });
+    }
+    return response;
+  },
   async (error) => {
+    // Enhanced error logging
+    if (error.response) {
+      // Server responded with error status
+      console.error(`❌ API Error [${error.response.status}]:`, {
+        url: error.config?.url,
+        method: error.config?.method?.toUpperCase(),
+        status: error.response.status,
+        data: error.response.data,
+        headers: error.response.headers
+      });
+    } else if (error.request) {
+      // Request was made but no response received
+      console.error('❌ Network Error - No response received:', {
+        url: error.config?.url,
+        method: error.config?.method?.toUpperCase(),
+        message: error.message,
+        code: error.code
+      });
+    } else {
+      // Something else happened
+      console.error('❌ API Setup Error:', error.message);
+    }
+
     if (error.response?.status === 401) {
       // Token expired or invalid
       await AsyncStorage.removeItem('userToken');
@@ -58,7 +105,32 @@ class AuthService {
   // User Registration
   async signup(userData) {
     try {
-      console.log('📝 Registering user:', userData.email);
+      console.log('🚀 SIGNUP DEBUG - Starting registration process');
+      console.log('📝 SIGNUP DEBUG - User data:', {
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        email: userData.email,
+        phone: userData.phone,
+        hasPassword: !!userData.password
+      });
+      
+      // Log environment and URL details
+      console.log('🌍 SIGNUP DEBUG - Environment details:', {
+        isDev: __DEV__,
+        baseURL: BASE_URL,
+        fullURL: `${BASE_URL}/auth/register`,
+        timeout: API.defaults.timeout
+      });
+      
+      // Log request configuration
+      console.log('⚙️ SIGNUP DEBUG - Request config:', {
+        method: 'POST',
+        url: '/auth/register',
+        headers: API.defaults.headers,
+        timeout: API.defaults.timeout
+      });
+      
+      console.log('📤 SIGNUP DEBUG - Making API call to register endpoint...');
       
       const response = await API.post('/auth/register', {
         firstName: userData.firstName,
@@ -68,7 +140,10 @@ class AuthService {
         phone: userData.phone || undefined
       });
 
-      console.log('✅ Registration successful');
+      console.log('✅ SIGNUP DEBUG - Registration API call successful!');
+      console.log('📊 SIGNUP DEBUG - Response status:', response.status);
+      console.log('📊 SIGNUP DEBUG - Response headers:', response.headers);
+      console.log('📊 SIGNUP DEBUG - Response data:', response.data);
       
       return {
         success: true,
@@ -77,12 +152,55 @@ class AuthService {
         user: response.data.user
       };
     } catch (error) {
-      console.error('❌ Registration failed:', error.response?.data || error.message);
+      console.log('❌ SIGNUP DEBUG - Registration failed!');
+      console.log('🔍 SIGNUP DEBUG - Error type:', error.constructor.name);
+      console.log('🔍 SIGNUP DEBUG - Error message:', error.message);
+      
+      if (error.response) {
+        // Server responded with error status
+        console.log('🔍 SIGNUP DEBUG - Server responded with error:');
+        console.log('  - Status:', error.response.status);
+        console.log('  - Status Text:', error.response.statusText);
+        console.log('  - Headers:', error.response.headers);
+        console.log('  - Data:', error.response.data);
+        console.log('  - Config URL:', error.response.config?.url);
+        console.log('  - Config Method:', error.response.config?.method);
+        console.log('  - Config BaseURL:', error.response.config?.baseURL);
+      } else if (error.request) {
+        // Request was made but no response received
+        console.log('🔍 SIGNUP DEBUG - No response received:');
+        console.log('  - Request:', error.request);
+        console.log('  - Request URL:', error.config?.url);
+        console.log('  - Request Method:', error.config?.method);
+        console.log('  - Request BaseURL:', error.config?.baseURL);
+        console.log('  - Request Headers:', error.config?.headers);
+        console.log('  - Error Code:', error.code);
+        console.log('  - Error Message:', error.message);
+      } else {
+        // Something else happened
+        console.log('🔍 SIGNUP DEBUG - Request setup error:');
+        console.log('  - Error Message:', error.message);
+        console.log('  - Error Stack:', error.stack);
+      }
+      
+      // Log axios configuration at time of error
+      console.log('🔍 SIGNUP DEBUG - Axios config during error:');
+      console.log('  - Base URL:', API.defaults.baseURL);
+      console.log('  - Headers:', API.defaults.headers);
+      console.log('  - Timeout:', API.defaults.timeout);
       
       return {
         success: false,
         message: error.response?.data?.message || 'Registration failed. Please try again.',
-        errors: error.response?.data?.errors || []
+        errors: error.response?.data?.errors || [],
+        debugInfo: {
+          errorType: error.constructor.name,
+          errorMessage: error.message,
+          hasResponse: !!error.response,
+          hasRequest: !!error.request,
+          status: error.response?.status,
+          baseURL: API.defaults.baseURL
+        }
       };
     }
   }
@@ -381,15 +499,72 @@ class AuthService {
   // Health Check
   async healthCheck() {
     try {
+      console.log('🔍 HEALTH CHECK DEBUG - Starting health check...');
+      console.log('🔍 HEALTH CHECK DEBUG - URL:', `${BASE_URL}/health`);
+      
       const response = await API.get('/health');
+      
+      console.log('✅ HEALTH CHECK DEBUG - Success!');
+      console.log('📊 HEALTH CHECK DEBUG - Status:', response.status);
+      console.log('📊 HEALTH CHECK DEBUG - Data:', response.data);
+      
       return {
         success: true,
         message: response.data.message
       };
     } catch (error) {
+      console.log('❌ HEALTH CHECK DEBUG - Failed!');
+      console.log('🔍 HEALTH CHECK DEBUG - Error:', error.message);
+      
+      if (error.response) {
+        console.log('🔍 HEALTH CHECK DEBUG - Server error:', error.response.status);
+      } else if (error.request) {
+        console.log('🔍 HEALTH CHECK DEBUG - Network error - no response');
+      }
+      
       return {
         success: false,
         message: 'Backend server is not reachable'
+      };
+    }
+  }
+
+  // Simple connectivity test
+  async testConnectivity() {
+    console.log('🧪 CONNECTIVITY TEST - Starting...');
+    console.log('🧪 CONNECTIVITY TEST - Base URL:', BASE_URL);
+    console.log('🧪 CONNECTIVITY TEST - Environment:', __DEV__ ? 'Development' : 'Production');
+    
+    try {
+      // Try a simple GET request first
+      const response = await fetch(`${BASE_URL}/health`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      console.log('✅ CONNECTIVITY TEST - Fetch successful!');
+      console.log('📊 CONNECTIVITY TEST - Status:', response.status);
+      console.log('📊 CONNECTIVITY TEST - OK:', response.ok);
+      
+      const text = await response.text();
+      console.log('📊 CONNECTIVITY TEST - Response:', text);
+      
+      return {
+        success: true,
+        status: response.status,
+        response: text
+      };
+    } catch (error) {
+      console.log('❌ CONNECTIVITY TEST - Failed!');
+      console.log('🔍 CONNECTIVITY TEST - Error:', error.message);
+      console.log('🔍 CONNECTIVITY TEST - Error type:', error.constructor.name);
+      
+      return {
+        success: false,
+        error: error.message,
+        errorType: error.constructor.name
       };
     }
   }
