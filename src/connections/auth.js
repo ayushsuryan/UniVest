@@ -5,9 +5,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Use different URLs based on environment
 const getBaseURL = () => {
   if (__DEV__) {
-    return 'http://157.180.90.43/api'; // Physical Device - Your computer's IP
+    return 'https://157.180.90.43/api'; // Physical Device - Your computer's IP
   } else {
-    return 'http://157.180.90.43/api';
+    return 'https://157.180.90.43/api';
   }
 };
 
