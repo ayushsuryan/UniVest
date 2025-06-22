@@ -12,9 +12,10 @@ import OTPVerification from './src/screens/OTPVerification';
 import ResetPassword from './src/screens/ResetPassword';
 import Dashboard from './src/screens/Dashboard';
 import Home from './src/screens/dashboard/Home';
-import Assets from './src/screens/dashboard/Assets'; 
-import Profile from './src/screens/dashboard/Profile'; 
+import Assets from './src/screens/dashboard/Assets';
+import Profile from './src/screens/dashboard/Profile';
 import MyAssets from './src/screens/dashboard/MyAssets';
+import Team from './src/screens/dashboard/Team';
 import Notifications from './src/screens/dashboard/Notifications';
 
 import './global.css';
@@ -47,10 +48,11 @@ const DashboardTabs = () => {
   return (
     <Tab.Navigator
       tabBar={(props) => <CustomBottomTabBar {...props} />}
-      screenOptions={{headerShown: false}}>
+      screenOptions={{ headerShown: false }}>
       <Tab.Screen name="Home" component={Home} />
       <Tab.Screen name="Assets" component={Assets} />
       <Tab.Screen name="My" component={MyAssets} />
+      <Tab.Screen name="Team" component={Team} />
       <Tab.Screen name="Profile" component={Profile} />
     </Tab.Navigator>
   );

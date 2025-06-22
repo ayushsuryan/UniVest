@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   Animated,
-  Dimensions,
   Platform,
 } from 'react-native';
 import FeatherIcon from 'react-native-vector-icons/Feather';
@@ -35,7 +34,7 @@ const CustomBottomTabBar: React.FC<CustomBottomTabBarProps> = ({
   ).current;
 
   useEffect(() => {
-    animatedValues.forEach((animatedValue:any, index:any) => {
+    animatedValues.forEach((animatedValue: any, index: any) => {
       if (index === state.index) {
         Animated.parallel([
           Animated.timing(animatedValue, {
@@ -80,6 +79,8 @@ const CustomBottomTabBar: React.FC<CustomBottomTabBarProps> = ({
         return 'trending-up';
       case 'My':
         return 'bar-chart-2';
+      case 'Team':
+        return 'users';
       case 'Profile':
         return 'user';
       case 'Portfolio':
@@ -214,7 +215,7 @@ const CustomBottomTabBar: React.FC<CustomBottomTabBarProps> = ({
                       marginBottom: isFocused ? 4 : 2,
                     }}
                   />
-                  
+
                   {isFocused && (
                     <Animated.View
                       style={{
@@ -241,7 +242,7 @@ const CustomBottomTabBar: React.FC<CustomBottomTabBarProps> = ({
                       </Text>
                     </Animated.View>
                   )}
-                  
+
                   {!isFocused && (
                     <Text
                       style={{
@@ -252,7 +253,7 @@ const CustomBottomTabBar: React.FC<CustomBottomTabBarProps> = ({
                         marginTop: 2,
                       }}
                     >
-                      {route.name}
+                      {route.name}''
                     </Text>
                   )}
                 </Animated.View>
@@ -280,7 +281,7 @@ const CustomBottomTabBar: React.FC<CustomBottomTabBarProps> = ({
         })}
       </View>
 
- 
+
     </View>
   );
 };

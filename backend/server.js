@@ -11,6 +11,7 @@ const { initializeScheduler } = require('./jobs/scheduler');
 const authRoutes = require('./routes/auth');
 const assetRoutes = require('./routes/assets');
 const investmentRoutes = require('./routes/investments');
+const referralRoutes = require('./routes/referrals');
 const { errorHandler, asyncHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -62,6 +63,7 @@ mongoose
 app.use('/api/auth', authRoutes);
 app.use('/api/assets', assetRoutes);
 app.use('/api/investments', investmentRoutes);
+app.use('/api/referrals', referralRoutes);
 
 // Admin setup route (for initial admin user creation)
 app.post(

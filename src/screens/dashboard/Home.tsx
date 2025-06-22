@@ -1,6 +1,6 @@
-import React, {useState, useEffect} from 'react';
-import {View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl, Modal, TextInput, Alert} from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl, Modal, TextInput, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
@@ -129,7 +129,7 @@ const Home: React.FC = () => {
       setError(null);
 
       const response = await InvestmentService.getPortfolioStats();
-      
+
       if (response.success) {
         setPortfolioStats(response.data);
       } else {
@@ -185,7 +185,7 @@ const Home: React.FC = () => {
       setTransactionLoading(true);
       // Mock deposit API call - replace with actual API
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       showToast.success(`₹${parseFloat(depositAmount).toLocaleString()} deposited successfully!`, 'Success');
       setDepositModalVisible(false);
       setDepositAmount('');
@@ -200,7 +200,7 @@ const Home: React.FC = () => {
   // Handle withdrawal
   const handleWithdraw = async () => {
     const amount = parseFloat(withdrawAmount);
-    
+
     if (!withdrawAmount || amount <= 0) {
       showToast.error('Please enter a valid withdrawal amount');
       return;
@@ -215,7 +215,7 @@ const Home: React.FC = () => {
       setTransactionLoading(true);
       // Mock withdrawal API call - replace with actual API
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       showToast.success(`₹${amount.toLocaleString()} withdrawal initiated!`, 'Success');
       setWithdrawModalVisible(false);
       setWithdrawAmount('');
@@ -312,8 +312,8 @@ const Home: React.FC = () => {
         />
       </View>
 
-      <ScrollView 
-        className="flex-1" 
+      <ScrollView
+        className="flex-1"
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -341,7 +341,7 @@ const Home: React.FC = () => {
           {error && (
             <View className="mb-4 p-4 bg-red-50 rounded-2xl border border-red-200">
               <Text className="text-red-600 text-center">{error}</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => loadPortfolioStats()}
                 className="mt-2 py-2 px-4 bg-red-600 rounded-xl self-center"
               >
@@ -366,7 +366,7 @@ const Home: React.FC = () => {
               <TouchableOpacity
                 className="flex-1 bg-green-600 rounded-2xl p-3 mx-2 shadow-lg"
                 style={{
-                  
+
                   shadowColor: '#059669',
                   shadowOffset: { width: 0, height: 8 },
                   shadowOpacity: 0.3,
@@ -395,18 +395,17 @@ const Home: React.FC = () => {
           </View>
 
           {/* Portfolio Stats */}
-          <View className="flex-row space-x-4 mb-6">
+          <View className="flex-row gap-4 space-x-4 mb-6">
             <View className="flex-1 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-              <Text className="text-gray-500 text-sm font-medium">Total Invested</Text>
+              <Text className="text-gray-500 text-sm  font-medium">Total Invested</Text>
               <Text className="text-gray-900 text-xl font-black">
                 ₹{portfolioStats.totalInvested.toLocaleString()}
               </Text>
             </View>
             <View className="flex-1 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
               <Text className="text-gray-500 text-sm font-medium">Total Returns</Text>
-              <Text className={`text-xl font-black ${
-                portfolioStats.totalReturns >= 0 ? 'text-green-600' : 'text-red-600'
-              }`}>
+              <Text className={`text-xl font-black ${portfolioStats.totalReturns >= 0 ? 'text-green-600' : 'text-red-600'
+                }`}>
                 {portfolioStats.totalReturns >= 0 ? '+' : ''}₹{Math.abs(portfolioStats.totalReturns).toLocaleString()}
               </Text>
             </View>
@@ -430,7 +429,7 @@ const Home: React.FC = () => {
                 activeOpacity={0.8}
                 onPress={() => handleQuickAction(action.id)}
               >
-                <View 
+                <View
                   className="w-12 h-12 rounded-2xl items-center justify-center mb-3"
                   style={{ backgroundColor: action.bg }}
                 >
@@ -447,7 +446,7 @@ const Home: React.FC = () => {
         <View className="px-6 pb-24">
           <View className="flex-row items-center justify-between mb-4">
             <Text className="text-gray-900 text-xl font-black">Recent Investments</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               activeOpacity={0.8}
               onPress={() => navigation.navigate('My')}
             >
@@ -460,7 +459,7 @@ const Home: React.FC = () => {
               <View key={investment.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
                 <View className="flex-row items-center justify-between mb-3">
                   <View className="flex-row items-center flex-1">
-                    <View 
+                    <View
                       className="w-12 h-12 rounded-2xl mr-3 overflow-hidden"
                       style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}
                     >
@@ -479,13 +478,13 @@ const Home: React.FC = () => {
                       </Text>
                     </View>
                   </View>
-                  <View 
+                  <View
                     className="px-3 py-1 rounded-full"
-                    style={{ 
+                    style={{
                       backgroundColor: getStatusBg(investment.status),
                     }}
                   >
-                    <Text 
+                    <Text
                       className="text-xs font-bold capitalize"
                       style={{ color: getStatusColor(investment.status) }}
                     >
@@ -512,7 +511,7 @@ const Home: React.FC = () => {
                       {investment.status === 'matured' ? 'Total Earned' : 'Days Left'}
                     </Text>
                     <Text className="text-gray-900 text-lg font-black">
-                      {investment.status === 'matured' 
+                      {investment.status === 'matured'
                         ? `+₹${investment.totalReturns.toLocaleString()}`
                         : `${investment.daysLeft} days`
                       }

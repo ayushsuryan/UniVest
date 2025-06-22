@@ -1,8 +1,9 @@
 import React from 'react';
-import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Home from './dashboard/Home';
 import Assets from './dashboard/Assets';
 import MyAssets from './dashboard/MyAssets';
+import Team from './dashboard/Team';
 import Profile from './dashboard/Profile';
 import CustomBottomTabBar from '../Components/CustomBottomTabBar';
 import { AuthGuard } from '../Components/AuthGuard';
@@ -20,6 +21,7 @@ const Dashboard: React.FC = () => {
         <Tab.Screen name="Home" component={Home} />
         <Tab.Screen name="Assets" component={Assets} />
         <Tab.Screen name="My" component={MyAssets} />
+        <Tab.Screen name="Team" component={Team} />
         <Tab.Screen name="Profile" component={Profile} />
       </Tab.Navigator>
     </AuthGuard>

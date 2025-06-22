@@ -33,8 +33,6 @@ interface PortfolioStats {
   activeInvestments: number;
   totalInvestments: number;
   balance: number;
-  referralBalance: number;
-  referredUsers: number;
 }
 
 const MyAssets: React.FC = () => {
@@ -47,8 +45,6 @@ const MyAssets: React.FC = () => {
     activeInvestments: 0,
     totalInvestments: 0,
     balance: 0,
-    referralBalance: 750, // Mock referral balance
-    referredUsers: 3 // Mock referred users count
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -399,81 +395,8 @@ const MyAssets: React.FC = () => {
           )}
         </View>
 
-        {/* Referral Summary Card */}
-        <View className="bg-gradient-to-r from-green-50 to-green-50 rounded-3xl p-6 shadow-lg border border-green-100 mb-40">
-          <View className="flex-row items-center justify-between mb-4">
-            <Text className="text-gray-900 text-xl font-black">
-              Referrals
-            </Text>
-            <View
-              className="w-12 h-12 rounded-2xl items-center justify-center"
-              style={{ backgroundColor: 'rgba(5, 150, 105, 0.15)' }}
-            >
-              <FeatherIcon name="users" size={24} color="#059669" />
-            </View>
-          </View>
-          <View className="flex-row justify-between mb-4">
-            <View>
-              <Text className="text-gray-600 text-sm">Referral Rewards</Text>
-              <Text className="text-gray-900 text-2xl font-black">₹{portfolioStats.referralBalance.toLocaleString()}</Text>
-            </View>
-            <View>
-              <Text className="text-gray-600 text-sm">Referred Users</Text>
-              <Text className="text-gray-900 text-2xl font-black">{portfolioStats.referredUsers}</Text>
-            </View>
-          </View>
-
-          {/* Mock Referred Users List */}
-          <View className="mb-4">
-            <Text className="text-gray-900 font-bold mb-3">Recent Referrals</Text>
-            {[
-              { name: 'Rahul Sharma', joinDate: '2024-01-15', reward: 250 },
-              { name: 'Priya Patel', joinDate: '2024-01-12', reward: 250 },
-              { name: 'Amit Kumar', joinDate: '2024-01-08', reward: 250 },
-            ].map((referral, index) => (
-              <View key={index} className="flex-row items-center justify-between py-3 px-3 mb-2 bg-white rounded-2xl shadow-sm border border-green-50">
-                <View className="flex-row items-center flex-1">
-                  <View
-                    className="w-10 h-10 bg-green-600 rounded-2xl items-center justify-center mr-3 shadow-sm"
-
-                  >
-                    <Text className="text-white text-sm font-black">
-                      {referral.name.split(' ').map(n => n[0]).join('')}
-                    </Text>
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-gray-900 font-black text-sm">{referral.name}</Text>
-                    <Text className="text-gray-500 text-xs font-medium">Joined {new Date(referral.joinDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</Text>
-                  </View>
-                </View>
-                <View
-                  className="px-3 py-1 rounded-xl"
-                  style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}
-                >
-                  <Text className="text-green-600 font-black text-sm">+₹{referral.reward}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-
-          <TouchableOpacity
-            className="rounded-2xl bg-green-600 px-6 py-4 shadow-lg"
-            style={{
-              shadowColor: '#059669',
-              shadowOffset: { width: 0, height: 8 },
-              shadowOpacity: 0.3,
-              shadowRadius: 20,
-            }}
-            activeOpacity={0.8}
-          >
-            <View className="flex-row items-center justify-center">
-              <FeatherIcon name="share-2" size={20} color="white" />
-              <Text className="text-white  text-base font-black ml-2">
-                Invite More Friends
-              </Text>
-            </View>
-          </TouchableOpacity>
-        </View>
+        {/* Bottom Spacer */}
+        <View style={{ height: 120 }} />
       </ScrollView>
     </SafeAreaView>
   );

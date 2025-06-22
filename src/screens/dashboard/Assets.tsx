@@ -1,6 +1,6 @@
-import React, {useState, useEffect} from 'react';
-import {View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl, Modal, TextInput} from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl, Modal, TextInput } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import AssetService from '../../connections/assets';
 import InvestmentService from '../../connections/investments';
@@ -26,7 +26,7 @@ const Assets: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Investment modal states
   const [investmentModalVisible, setInvestmentModalVisible] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
@@ -50,7 +50,7 @@ const Assets: React.FC = () => {
       };
 
       const response = await AssetService.getAssets(filters);
-      
+
       if (response.success) {
         setAssets(response.data);
       } else {
@@ -115,7 +115,7 @@ const Assets: React.FC = () => {
     }
 
     const amount = parseFloat(investmentAmount);
-    
+
     if (isNaN(amount) || amount <= 0) {
       showToast.error('Please enter a valid investment amount');
       return;
@@ -133,9 +133,9 @@ const Assets: React.FC = () => {
 
     try {
       setInvestmentLoading(true);
-      
+
       const response = await InvestmentService.createInvestment(selectedAsset._id, amount);
-      
+
       if (response.success) {
         showToast.success('Investment created successfully!', 'Success');
         setInvestmentModalVisible(false);
@@ -163,10 +163,10 @@ const Assets: React.FC = () => {
   });
 
   const filters = [
-    {key: 'all', label: 'All Commodities'},
-    {key: 'high', label: 'High Demand'},
-    {key: 'medium', label: 'Medium Demand'},
-    {key: 'electronics', label: 'Electronics'},
+    { key: 'all', label: 'All Commodities' },
+    { key: 'high', label: 'High Demand' },
+    { key: 'medium', label: 'Medium Demand' },
+    { key: 'electronics', label: 'Electronics' },
   ];
 
   const getDemandColor = (demand: string) => {
@@ -245,19 +245,6 @@ const Assets: React.FC = () => {
               Invest in high-demand products
             </Text>
           </View>
-          <View className="flex-row items-center">
-            <View className="mr-4">
-              <Text className="text-gray-500 text-xs">Balance</Text>
-              <Text className="text-green-600 text-lg font-black">₹{userBalance.toLocaleString()}</Text>
-            </View>
-            <TouchableOpacity
-              className="rounded-2xl p-3 bg-white shadow-sm border border-gray-100"
-              activeOpacity={0.8}
-              onPress={onRefresh}
-            >
-              <FeatherIcon name="refresh-cw" size={24} color="#059669" />
-            </TouchableOpacity>
-          </View>
         </View>
 
         {/* Market Overview Card */}
@@ -288,25 +275,23 @@ const Assets: React.FC = () => {
 
       {/* Filters */}
       <View className="px-6 mb-6">
-        <ScrollView 
-          horizontal 
+        <ScrollView
+          horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{paddingRight: 24}}
+          contentContainerStyle={{ paddingRight: 24 }}
         >
           {filters.map((filter) => (
             <TouchableOpacity
               key={filter.key}
               onPress={() => setSelectedFilter(filter.key)}
-              className={`mr-3 px-6 py-3 rounded-2xl ${
-                selectedFilter === filter.key
-                  ? 'bg-green-600'
-                  : 'bg-white border border-gray-200'
-              }`}
+              className={`mr-3 px-6 py-3 rounded-2xl ${selectedFilter === filter.key
+                ? 'bg-slate-500'
+                : 'bg-white border border-gray-200'
+                }`}
               activeOpacity={0.8}
             >
-              <Text className={`font-bold text-sm ${
-                selectedFilter === filter.key ? 'text-white' : 'text-gray-700'
-              }`}>
+              <Text className={`font-bold text-sm ${selectedFilter === filter.key ? 'text-white' : 'text-gray-700'
+                }`}>
                 {filter.label}
               </Text>
             </TouchableOpacity>
@@ -318,7 +303,7 @@ const Assets: React.FC = () => {
       {error && (
         <View className="mx-6 mb-4 p-4 bg-red-50 rounded-2xl border border-red-200">
           <Text className="text-red-600 text-center">{error}</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => loadAssets()}
             className="mt-2 py-2 px-4 bg-red-600 rounded-xl self-center"
           >
@@ -328,7 +313,7 @@ const Assets: React.FC = () => {
       )}
 
       {/* Assets List */}
-      <ScrollView 
+      <ScrollView
         className="flex-1 px-6"
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -350,11 +335,11 @@ const Assets: React.FC = () => {
               <View className="flex-1">
                 <Text className="text-gray-900 text-lg font-black">{asset.name}</Text>
                 <Text className="text-gray-500 text-sm">{asset.category}</Text>
-                <View 
+                <View
                   className="mt-1 px-3 py-1 rounded-full self-start"
                   style={{ backgroundColor: getDemandBg(asset.currentDemand) }}
                 >
-                  <Text 
+                  <Text
                     className="text-xs font-bold"
                     style={{ color: getDemandColor(asset.currentDemand) }}
                   >
@@ -367,7 +352,7 @@ const Assets: React.FC = () => {
                 <Text className="text-gray-500 text-xs">Hourly Return</Text>
               </View>
             </View>
-            
+
             <View className="border-t border-gray-100 pt-4">
               <View className="flex-row justify-between mb-2">
                 <Text className="text-gray-500 text-sm">Min. Investment</Text>
@@ -381,9 +366,9 @@ const Assets: React.FC = () => {
                 <Text className="text-gray-500 text-sm">Total Investors</Text>
                 <Text className="text-gray-900 font-bold text-sm">{asset.totalInvestors.toLocaleString()}</Text>
               </View>
-              
-              <TouchableOpacity 
-                className="bg-green-600 py-4 rounded-2xl"
+
+              <TouchableOpacity
+                className="bg-slate-500 py-4 rounded-2xl"
                 activeOpacity={0.8}
                 onPress={() => handleInvestPress(asset)}
               >
@@ -394,14 +379,14 @@ const Assets: React.FC = () => {
             </View>
           </TouchableOpacity>
         ))}
-        
+
         {filteredAssets.length === 0 && !loading && !error && (
           <View className="items-center py-20">
             <Text className="text-gray-500 text-lg">No assets found</Text>
             <Text className="text-gray-400 text-sm mt-2">Try adjusting your filters</Text>
           </View>
         )}
-        
+
         <View className="h-20" />
       </ScrollView>
 
@@ -465,7 +450,7 @@ const Assets: React.FC = () => {
                 </View>
 
                 <TouchableOpacity
-                  className={`py-4 rounded-2xl ${investmentLoading ? 'bg-gray-400' : 'bg-green-600'}`}
+                  className={`py-4 rounded-2xl ${investmentLoading ? 'bg-gray-400' : 'bg-slate-500'}`}
                   onPress={handleInvestment}
                   disabled={investmentLoading}
                   activeOpacity={0.8}
