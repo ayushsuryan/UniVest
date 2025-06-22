@@ -4,9 +4,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // API Configuration
 const getBaseURL = () => {
   if (__DEV__) {
-    return 'http://157.180.90.43/api'; // Physical Device - Your computer's IP
+    return 'https://jas-technologies.in/api'; // Using domain with proper SSL
   } else {
-    return 'http://157.180.90.43/api';
+    return 'https://jas-technologies.in/api'; // Using domain with proper SSL
   }
 };
 
