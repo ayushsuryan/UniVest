@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- Configuration for jas-technologies.in domain -->
+    <!-- Allow localhost HTTP for debugging -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+    </domain-config>
+
     <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">jas-technologies.in</domain>
         <trust-anchors>
@@ -8,19 +12,17 @@
             <certificates src="user"/>
         </trust-anchors>
     </domain-config>
-    
-    <!-- Default configuration for all other domains -->
+
     <base-config cleartextTrafficPermitted="false">
         <trust-anchors>
             <certificates src="system"/>
         </trust-anchors>
     </base-config>
-    
-    <!-- Debug overrides to allow all certificates in debug builds -->
+
     <debug-overrides>
         <trust-anchors>
             <certificates src="system"/>
             <certificates src="user"/>
         </trust-anchors>
     </debug-overrides>
-</network-security-config> 
+</network-security-config>
