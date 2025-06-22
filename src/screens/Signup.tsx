@@ -1,10 +1,8 @@
-import React, {useState} from 'react';
-import {View, Text, TouchableOpacity, ScrollView, Image} from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import CustomInput from '../Components/CustomInput';
-import CustomButton from '../Components/CustomButton';
-import DebugLogs from '../Components/DebugLogs';
 import { useAuth } from '../context/AuthContext';
 import { showToast } from '../utils/toast';
 import AuthService from '../connections/auth';
@@ -13,7 +11,7 @@ interface SignupProps {
   navigation: any;
 }
 
-const Signup: React.FC<SignupProps> = ({navigation}) => {
+const Signup: React.FC<SignupProps> = ({ navigation }) => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -23,19 +21,19 @@ const Signup: React.FC<SignupProps> = ({navigation}) => {
     confirmPassword: '',
   });
   const { signup, isLoading } = useAuth();
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [debugVisible, setDebugVisible] = useState(false);
 
   const updateFormData = (field: string, value: string) => {
-    setFormData(prev => ({...prev, [field]: value}));
+    setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({...prev, [field]: ''}));
+      setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
 
   const validateForm = () => {
-    const newErrors: {[key: string]: string} = {};
+    const newErrors: { [key: string]: string } = {};
 
     if (!formData.firstName.trim()) {
       newErrors.firstName = 'First name is required';
@@ -75,21 +73,15 @@ const Signup: React.FC<SignupProps> = ({navigation}) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const testConnectivity = async () => {
-    console.log('🧪 Testing connectivity from signup page...');
-    const result = await AuthService.testConnectivity();
-    console.log('🧪 Connectivity test result:', result);
-  };
 
   const handleSignup = async () => {
     if (!validateForm()) return;
 
     try {
       // First test connectivity
-      await testConnectivity();
-      
+
       console.log('🚀 SIGNUP PAGE - Starting signup process...');
-      
+
       const result = await signup({
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -142,13 +134,13 @@ const Signup: React.FC<SignupProps> = ({navigation}) => {
       <ScrollView className="flex-1 px-6 py-4" showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View className="items-center mb-8">
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => navigation.goBack()}
             className="absolute left-0 top-0 p-2"
           >
             <FeatherIcon name="arrow-left" size={24} color="#059669" />
           </TouchableOpacity>
-          
+
           <View className="mb-4">
             <View
               className="w-20 h-20 rounded-3xl items-center justify-center shadow-lg"
@@ -161,7 +153,7 @@ const Signup: React.FC<SignupProps> = ({navigation}) => {
               />
             </View>
           </View>
-          
+
           <Text className="text-gray-900 text-2xl font-black mb-2">
             Create Account
           </Text>
@@ -171,24 +163,6 @@ const Signup: React.FC<SignupProps> = ({navigation}) => {
           <Text className="text-gray-600 text-sm text-center">
             journey to financial freedom
           </Text>
-        </View>
-
-        {/* Debug Controls */}
-        <View className="flex-row justify-center mb-4 space-x-2">
-          <TouchableOpacity
-            onPress={testConnectivity}
-            className="bg-blue-600 rounded-lg px-4 py-2"
-          >
-            <Text className="text-white text-sm font-medium">Test Connection</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setDebugVisible(!debugVisible)}
-            className="bg-purple-600 rounded-lg px-4 py-2"
-          >
-            <Text className="text-white text-sm font-medium">
-              {debugVisible ? 'Hide' : 'Show'} Debug
-            </Text>
-          </TouchableOpacity>
         </View>
 
         {/* Form */}
@@ -319,12 +293,7 @@ const Signup: React.FC<SignupProps> = ({navigation}) => {
           </Text>
         </View>
 
-        {/* Debug Logs Component */}
-        {debugVisible && (
-          <View className="mt-6 mb-4">
-            <DebugLogs visible={debugVisible} onToggle={() => setDebugVisible(!debugVisible)} />
-          </View>
-        )}
+
       </ScrollView>
     </SafeAreaView>
   );
