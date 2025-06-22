@@ -1,333 +1,161 @@
-# Finance App Backend
-
-A secure and scalable Node.js backend for the Finance React Native application with authentication, OTP verification, and email services.
-
-## Features
-
-- 🔐 **User Authentication** - JWT-based authentication with secure password hashing
-- 📧 **Email Verification** - OTP-based email verification using Gmail SMTP
-- 🔄 **Password Reset** - Secure password reset with OTP verification
-- 🛡️ **Security** - Rate limiting, input validation, and security headers
-- 📱 **Mobile Ready** - Designed for React Native mobile applications
-- 🗄️ **MongoDB** - Robust data storage with Mongoose ODM
-
-## Tech Stack
-
-- **Runtime**: Node.js
-- **Framework**: Express.js
-- **Database**: MongoDB with Mongoose
-- **Authentication**: JWT (JSON Web Tokens)
-- **Email Service**: Nodemailer with Gmail
-- **Validation**: Express-validator
-- **Security**: Helmet, CORS, Rate limiting
-
-## Quick Start
-
-### Prerequisites
-
-- Node.js (v14 or higher)
-- MongoDB (local or MongoDB Atlas)
-- Gmail account with App Password
-
-### Installation
-
-1. **Clone and navigate to backend directory**
-   ```bash
-   cd Finance/backend
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Configure environment variables**
-   ```bash
-   cp .env.example .env
-   ```
-   
-   Update the `.env` file with your configuration:
-   ```env
-   # Server Configuration
-   PORT=5000
-   NODE_ENV=development
-   
-   # Database Configuration
-   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/finance_app
-   
-   # JWT Configuration
-   JWT_SECRET=your_super_secure_jwt_secret_key_here
-   JWT_EXPIRES_IN=7d
-   
-   # Email Configuration (Gmail)
-   EMAIL_USER=your_gmail_email@gmail.com
-   EMAIL_PASS=your_gmail_app_password
-   
-   # OTP Configuration
-   OTP_EXPIRES_IN=10
-   OTP_LENGTH=6
-   
-   # CORS Configuration
-   FRONTEND_URL=http://localhost:3000
-   ```
-
-4. **Start the server**
-   ```bash
-   # Development mode
-   npm run dev
-   
-   # Production mode
-   npm start
-   ```
-
-### Gmail Setup
-
-To use Gmail for sending emails:
-
-1. Enable 2-Factor Authentication on your Gmail account
-2. Generate an App Password:
-   - Go to Google Account settings
-   - Security → 2-Step Verification → App passwords
-   - Generate a password for "Mail"
-   - Use this password in `EMAIL_PASS` environment variable
-
-## API Endpoints
-
-### Authentication Routes
-
-All routes are prefixed with `/api/auth`
-
-#### Public Routes
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/register` | Register a new user |
-| POST | `/verify-email` | Verify email with OTP |
-| POST | `/resend-verification-otp` | Resend verification OTP |
-| POST | `/login` | User login |
-| POST | `/forgot-password` | Send password reset OTP |
-| POST | `/reset-password` | Reset password with OTP |
-
-#### Protected Routes (Require Authentication)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/profile` | Get user profile |
-| PUT | `/profile` | Update user profile |
-| PUT | `/change-password` | Change password |
-| POST | `/logout` | Logout user |
-| DELETE | `/account` | Deactivate account |
-
-### API Examples
-
-#### 1. Register User
-```bash
-POST /api/auth/register
-Content-Type: application/json
-
-{
-  "firstName": "John",
-  "lastName": "Doe",
-  "email": "john.doe@example.com",
-  "password": "SecurePass123",
-  "phone": "+1234567890"
-}
-```
-
-#### 2. Verify Email
-```bash
-POST /api/auth/verify-email
-Content-Type: application/json
-
-{
-  "email": "john.doe@example.com",
-  "otp": "123456"
-}
-```
-
-#### 3. Login
-```bash
-POST /api/auth/login
-Content-Type: application/json
-
-{
-  "email": "john.doe@example.com",
-  "password": "SecurePass123"
-}
-```
-
-#### 4. Forgot Password
-```bash
-POST /api/auth/forgot-password
-Content-Type: application/json
-
-{
-  "email": "john.doe@example.com"
-}
-```
-
-#### 5. Reset Password
-```bash
-POST /api/auth/reset-password
-Content-Type: application/json
-
-{
-  "email": "john.doe@example.com",
-  "otp": "123456",
-  "newPassword": "NewSecurePass123"
-}
-```
-
-#### 6. Get Profile (Protected)
-```bash
-GET /api/auth/profile
-Authorization: Bearer <jwt_token>
-```
-
-### Response Format
-
-All API responses follow this format:
-
-```json
-{
-  "success": true|false,
-  "message": "Response message",
-  "data": {}, // Optional data
-  "errors": [] // Optional validation errors
-}
-```
-
-### Authentication
-
-Protected routes require a JWT token in the Authorization header:
-
-```
-Authorization: Bearer <jwt_token>
-```
-
-## Security Features
-
-- **Rate Limiting**: Prevents brute force attacks
-- **Input Validation**: Validates all user inputs
-- **Password Hashing**: Uses bcrypt with salt rounds
-- **JWT Security**: Secure token generation and validation
-- **CORS Protection**: Configurable cross-origin requests
-- **Security Headers**: Helmet.js for security headers
-- **OTP Security**: Time-limited OTPs with attempt limits
-
-## Database Schema
-
-### User Model
-```javascript
-{
-  firstName: String (required),
-  lastName: String (required),
-  email: String (required, unique),
-  password: String (required, hashed),
-  phone: String (optional),
-  isEmailVerified: Boolean (default: false),
-  isActive: Boolean (default: true),
-  profilePicture: String (optional),
-  dateOfBirth: Date (optional),
-  lastLogin: Date,
-  createdAt: Date,
-  updatedAt: Date
-}
-```
-
-### OTP Model
-```javascript
-{
-  email: String (required),
-  otp: String (required),
-  type: String (enum: ['email_verification', 'password_reset', 'login_verification']),
-  isUsed: Boolean (default: false),
-  attempts: Number (default: 0, max: 5),
-  expiresAt: Date (required),
-  createdAt: Date,
-  updatedAt: Date
-}
-```
-
-## Error Handling
-
-The API includes comprehensive error handling:
-
-- **Validation Errors**: 400 status with detailed field errors
-- **Authentication Errors**: 401 status for invalid credentials
-- **Authorization Errors**: 403 status for insufficient permissions
-- **Not Found Errors**: 404 status for missing resources
-- **Rate Limit Errors**: 429 status for too many requests
-- **Server Errors**: 500 status for internal server errors
-
-## Development
-
-### Available Scripts
-
-```bash
-npm start          # Start production server
-npm run dev        # Start development server with nodemon
-npm test           # Run tests (placeholder)
-```
-
-### Project Structure
-
-```
-backend/
-├── models/           # Mongoose models
-│   ├── User.js
-│   └── OTP.js
-├── routes/           # Express routes
-│   └── auth.js
-├── middleware/       # Custom middleware
-│   ├── auth.js
-│   └── errorHandler.js
-├── services/         # Business logic services
-│   └── emailService.js
-├── utils/            # Utility functions
-│   ├── otpGenerator.js
-│   └── validators.js
-├── .env              # Environment variables
-├── .env.example      # Environment template
-├── server.js         # Main server file
-└── package.json      # Dependencies and scripts
-```
-
-## Deployment
-
-### Environment Variables for Production
-
-```env
-NODE_ENV=production
-PORT=5000
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/finance_app
-JWT_SECRET=your_production_jwt_secret
-EMAIL_USER=your_production_email@gmail.com
-EMAIL_PASS=your_production_app_password
-FRONTEND_URL=https://your-frontend-domain.com
-```
-
-### Production Considerations
-
-1. **Use strong JWT secrets** in production
-2. **Enable HTTPS** for secure token transmission
-3. **Configure proper CORS** origins
-4. **Set up monitoring** and logging
-5. **Use environment-specific** MongoDB clusters
-6. **Implement backup** strategies
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## License
-
-This project is licensed under the MIT License.
-
-## Support
-
-For support or questions, please contact the development team or create an issue in the repository. 
+To set up CI/CD between your Node.js backend on GitLab and a remote NVMe Ubuntu 22.04 server, follow these structured steps:
+
+✅ Overview
+Source Code: GitLab repository.
+
+CI/CD Tool: GitLab CI/CD (.gitlab-ci.yml)
+
+Deployment Server: Your NVMe Ubuntu 22.04 server (e.g., IP: 157.180.90.43)
+
+Access Method: SSH (using SSH key authentication)
+
+Web Process Manager: PM2 (to run Node.js app)
+
+🔧 Step-by-Step CI/CD Setup
+
+1. Install Required Packages on Server
+   SSH into your server:
+
+bash
+Copy
+Edit
+ssh root@157.180.90.43
+Install dependencies:
+
+bash
+Copy
+Edit
+sudo apt update
+sudo apt install -y nodejs npm git build-essential pm2 openssh-server
+Make sure Node is installed:
+
+bash
+Copy
+Edit
+node -v
+npm -v
+Install PM2:
+
+bash
+Copy
+Edit
+sudo npm install -g pm2 2. Create SSH Key for GitLab Runner
+On your local machine or CI runner:
+
+bash
+Copy
+Edit
+ssh-keygen -t ed25519 -C "gitlab-deploy" -f ~/.ssh/gitlab_deploy_key
+This generates:
+
+Private key: ~/.ssh/gitlab_deploy_key
+
+Public key: ~/.ssh/gitlab_deploy_key.pub
+
+3. Add Public Key to Your Server
+   Copy the public key to the server:
+
+bash
+Copy
+Edit
+ssh-copy-id -i ~/.ssh/gitlab_deploy_key.pub root@157.180.90.43
+Or manually append it:
+
+bash
+Copy
+Edit
+cat ~/.ssh/gitlab_deploy_key.pub | ssh root@157.180.90.43 "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
+Test it:
+
+bash
+Copy
+Edit
+ssh -i ~/.ssh/gitlab_deploy_key root@157.180.90.43 4. Add Keys to GitLab CI/CD Variables
+Go to GitLab Project → Settings → CI/CD → Variables.
+
+Add:
+
+SSH_PRIVATE_KEY
+Paste content of ~/.ssh/gitlab_deploy_key (entire file, including -----BEGIN... and -----END...)
+
+✅ Mark as “Protected” if you're only deploying from main.
+
+SSH_KNOWN_HOSTS
+Run this:
+
+bash
+Copy
+Edit
+ssh-keyscan -H 157.180.90.43
+Copy the output and paste here.
+
+5. Create .gitlab-ci.yml in Your Project Root
+   yaml
+   Copy
+   Edit
+   stages:
+
+- build
+- deploy
+
+variables:
+NODE_ENV: production
+DEPLOY_HOST: "157.180.90.43"
+DEPLOY_USER: "root"
+DEPLOY_PATH: "/var/www/finance-backend"
+APP_NAME: "finance-backend"
+
+before_script:
+
+- which ssh-agent || (apt-get update -y && apt-get install openssh-client -y)
+- eval $(ssh-agent -s)
+- echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+- chmod 600 ~/.ssh/deploy_key
+- ssh-add ~/.ssh/deploy_key
+- mkdir -p ~/.ssh
+- echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+- chmod 644 ~/.ssh/known_hosts
+
+build:
+stage: build
+image: node:18
+script: - npm ci --production
+
+deploy:
+stage: deploy
+image: node:18
+before_script: - apt-get update && apt-get install -y rsync - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key - chmod 600 ~/.ssh/deploy_key - ssh-add ~/.ssh/deploy_key - mkdir -p ~/.ssh - echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+  script:
+    - echo "Deploying to server..."
+    - rsync -avz --delete --exclude=node_modules --exclude=.git ./ $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/
+    - ssh $DEPLOY_USER@$DEPLOY_HOST "cd $DEPLOY_PATH && npm install --production && pm2 restart $APP_NAME || pm2 start server.js --name $APP_NAME"
+only: - main
+📦 Folder Structure on Server
+On your NVMe server, after deployment, your folder will look like:
+
+go
+Copy
+Edit
+/var/www/finance-backend/
+├── node_modules/
+├── server.js
+├── package.json
+├── ...
+🔁 Auto-Restart on Reboot (Optional)
+On the server:
+
+bash
+Copy
+Edit
+pm2 startup
+pm2 save
+✅ Final Checklist
+Item Status
+SSH Key added to server ✅
+GitLab CI/CD private key variable ✅
+pm2 installed and used ✅
+.gitlab-ci.yml configured ✅
+Node.js server accessible over SSH ✅
+
+Let me know if you'd like me to generate a working .gitlab-ci.yml based on your project files (server.js, ecosystem.config.js, etc.).

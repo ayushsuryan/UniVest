@@ -1,6 +1,6 @@
-import React, {useState, useEffect} from 'react';
-import {View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl} from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import InvestmentService from '../../connections/investments';
 import { showToast } from '../../utils/toast';
@@ -106,25 +106,22 @@ const MyAssets: React.FC = () => {
       return;
     }
 
-    // Calculate penalty
-    const penaltyAmount = investment.currentValue * 0.38;
-    const finalAmount = investment.currentValue - penaltyAmount;
-
-    showToast.warning(
-      `You will receive ₹${finalAmount.toLocaleString()} after 38% penalty (₹${penaltyAmount.toLocaleString()}). Tap to confirm cash out.`,
-      'Cash Out Early?'
+    // No penalty - direct cashout
+    showToast.info(
+      `You will receive ₹${investment.currentValue.toLocaleString()}. Tap to confirm cash out.`,
+      'Confirm Cash Out'
     );
-    
-    // For demo purposes, auto-proceed after showing warning
+
+    // For demo purposes, auto-proceed after showing info
     setTimeout(() => {
       performCashOut(investment._id);
-    }, 3000);
+    }, 2000);
   };
 
   const performCashOut = async (investmentId: string) => {
     try {
       const response = await InvestmentService.cashOutInvestment(investmentId);
-      
+
       if (response.success) {
         showToast.success('Investment cashed out successfully!', 'Success');
         loadData(); // Refresh data
@@ -138,10 +135,10 @@ const MyAssets: React.FC = () => {
   };
 
   const tabs = [
-    {key: 'all', label: 'All Investments'},
-    {key: 'active', label: 'Active'},
-    {key: 'matured', label: 'Matured'},
-    {key: 'cashed_out', label: 'Cashed Out'},
+    { key: 'all', label: 'All Investments' },
+    { key: 'active', label: 'Active' },
+    { key: 'matured', label: 'Matured' },
+    { key: 'cashed_out', label: 'Cashed Out' },
   ];
 
   const filteredInvestments = investments.filter(investment => {
@@ -207,8 +204,8 @@ const MyAssets: React.FC = () => {
         />
       </View>
 
-      <ScrollView 
-        className="flex-1" 
+      <ScrollView
+        className="flex-1"
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -240,9 +237,8 @@ const MyAssets: React.FC = () => {
               <Text className="text-gray-600 text-base font-medium">Portfolio Value</Text>
               <View className="flex-row items-center">
                 <FeatherIcon name={portfolioStats.totalReturns >= 0 ? "trending-up" : "trending-down"} size={16} color={portfolioStats.totalReturns >= 0 ? "#10b981" : "#ef4444"} />
-                <Text className={`text-sm font-bold ml-1 ${
-                  portfolioStats.totalReturns >= 0 ? 'text-green-600' : 'text-red-600'
-                }`}>
+                <Text className={`text-sm font-bold ml-1 ${portfolioStats.totalReturns >= 0 ? 'text-green-600' : 'text-red-600'
+                  }`}>
                   {portfolioStats.totalReturns >= 0 ? '+' : ''}{getReturnPercentage(portfolioStats.totalInvested, portfolioStats.totalReturns)}%
                 </Text>
               </View>
@@ -257,9 +253,8 @@ const MyAssets: React.FC = () => {
               </View>
               <View>
                 <Text className="text-gray-500 text-sm">Returns</Text>
-                <Text className={`text-xl font-black ${
-                  portfolioStats.totalReturns >= 0 ? 'text-green-600' : 'text-red-600'
-                }`}>
+                <Text className={`text-xl font-black ${portfolioStats.totalReturns >= 0 ? 'text-green-600' : 'text-red-600'
+                  }`}>
                   {portfolioStats.totalReturns >= 0 ? '+' : ''}₹{Math.abs(portfolioStats.totalReturns).toLocaleString()}
                 </Text>
               </View>
@@ -273,20 +268,19 @@ const MyAssets: React.FC = () => {
 
         {/* Tabs */}
         <View className="px-6 mb-6">
-          <ScrollView 
-            horizontal 
+          <ScrollView
+            horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{paddingRight: 24}}
+            contentContainerStyle={{ paddingRight: 24 }}
           >
             {tabs.map((tab) => (
               <TouchableOpacity
                 key={tab.key}
                 onPress={() => setSelectedTab(tab.key)}
-                className={`mr-3 px-6 py-3 rounded-2xl ${
-                  selectedTab === tab.key
-                    ? 'bg-green-600 shadow-lg'
-                    : 'bg-white border border-gray-200'
-                }`}
+                className={`mr-3 px-6 py-3 rounded-2xl ${selectedTab === tab.key
+                  ? 'bg-green-600 shadow-lg'
+                  : 'bg-white border border-gray-200'
+                  }`}
                 style={{
                   shadowColor: selectedTab === tab.key ? '#059669' : 'transparent',
                   shadowOffset: { width: 0, height: 4 },
@@ -295,9 +289,8 @@ const MyAssets: React.FC = () => {
                 }}
                 activeOpacity={0.8}
               >
-                <Text className={`font-bold text-sm ${
-                  selectedTab === tab.key ? 'text-white' : 'text-gray-700'
-                }`}>
+                <Text className={`font-bold text-sm ${selectedTab === tab.key ? 'text-white' : 'text-gray-700'
+                  }`}>
                   {tab.label}
                 </Text>
               </TouchableOpacity>
@@ -309,7 +302,7 @@ const MyAssets: React.FC = () => {
         {error && (
           <View className="mx-6 mb-4 p-4 bg-red-50 rounded-2xl border border-red-200">
             <Text className="text-red-600 text-center">{error}</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => loadData()}
               className="mt-2 py-2 px-4 bg-red-600 rounded-xl self-center"
             >
@@ -335,11 +328,11 @@ const MyAssets: React.FC = () => {
                 <View className="flex-1">
                   <Text className="text-gray-900 text-lg font-black">{investment.asset.name}</Text>
                   <Text className="text-gray-500 text-sm">{investment.asset.category}</Text>
-                  <View 
+                  <View
                     className="mt-1 px-3 py-1 rounded-full self-start"
                     style={{ backgroundColor: getStatusBg(investment.status) }}
                   >
-                    <Text 
+                    <Text
                       className="text-xs font-bold capitalize"
                       style={{ color: getStatusColor(investment.status) }}
                     >
@@ -348,15 +341,14 @@ const MyAssets: React.FC = () => {
                   </View>
                 </View>
                 <View className="items-end">
-                  <Text className={`text-lg font-black ${
-                    investment.totalReturns >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
+                  <Text className={`text-lg font-black ${investment.totalReturns >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
                     {investment.totalReturns >= 0 ? '+' : ''}{investment.returnPercentage}%
                   </Text>
                   <Text className="text-gray-500 text-xs">Total Return</Text>
                 </View>
               </View>
-              
+
               <View className="border-t border-gray-100 pt-4">
                 <View className="flex-row justify-between mb-2">
                   <Text className="text-gray-500 text-sm">Invested</Text>
@@ -368,9 +360,8 @@ const MyAssets: React.FC = () => {
                 </View>
                 <View className="flex-row justify-between mb-2">
                   <Text className="text-gray-500 text-sm">Returns</Text>
-                  <Text className={`font-bold text-sm ${
-                    investment.totalReturns >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
+                  <Text className={`font-bold text-sm ${investment.totalReturns >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
                     {investment.totalReturns >= 0 ? '+' : ''}₹{Math.abs(investment.totalReturns).toLocaleString()}
                   </Text>
                 </View>
@@ -382,22 +373,22 @@ const MyAssets: React.FC = () => {
                     {investment.status === 'active' ? `${investment.daysLeft} days` : formatDate(investment.investmentDate)}
                   </Text>
                 </View>
-                
+
                 {investment.status === 'active' && (
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     className="bg-red-600 py-3 rounded-2xl"
                     activeOpacity={0.8}
                     onPress={() => handleCashOut(investment)}
                   >
                     <Text className="text-white text-center font-black text-sm">
-                      Cash Out Early (38% penalty)
+                      Cash Out
                     </Text>
                   </TouchableOpacity>
                 )}
               </View>
             </TouchableOpacity>
           ))}
-          
+
           {filteredInvestments.length === 0 && !loading && !error && (
             <View className="items-center py-20">
               <Text className="text-gray-500 text-lg">No investments found</Text>
@@ -407,14 +398,14 @@ const MyAssets: React.FC = () => {
             </View>
           )}
         </View>
-        
+
         {/* Referral Summary Card */}
         <View className="bg-gradient-to-r from-green-50 to-green-50 rounded-3xl p-6 shadow-lg border border-green-100 mb-40">
           <View className="flex-row items-center justify-between mb-4">
             <Text className="text-gray-900 text-xl font-black">
               Referrals
             </Text>
-            <View 
+            <View
               className="w-12 h-12 rounded-2xl items-center justify-center"
               style={{ backgroundColor: 'rgba(5, 150, 105, 0.15)' }}
             >
@@ -442,9 +433,9 @@ const MyAssets: React.FC = () => {
             ].map((referral, index) => (
               <View key={index} className="flex-row items-center justify-between py-3 px-3 mb-2 bg-white rounded-2xl shadow-sm border border-green-50">
                 <View className="flex-row items-center flex-1">
-                  <View 
+                  <View
                     className="w-10 h-10 bg-green-600 rounded-2xl items-center justify-center mr-3 shadow-sm"
-                    
+
                   >
                     <Text className="text-white text-sm font-black">
                       {referral.name.split(' ').map(n => n[0]).join('')}
@@ -455,7 +446,7 @@ const MyAssets: React.FC = () => {
                     <Text className="text-gray-500 text-xs font-medium">Joined {new Date(referral.joinDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</Text>
                   </View>
                 </View>
-                <View 
+                <View
                   className="px-3 py-1 rounded-xl"
                   style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}
                 >
@@ -464,7 +455,7 @@ const MyAssets: React.FC = () => {
               </View>
             ))}
           </View>
-          
+
           <TouchableOpacity
             className="rounded-2xl bg-green-600 px-6 py-4 shadow-lg"
             style={{
