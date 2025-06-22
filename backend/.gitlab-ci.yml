@@ -4,16 +4,16 @@ stages:
   - deploy
 
 variables:
-  NODE_VERSION: "18"
-  DEPLOY_USER: "root"
-  DEPLOY_HOST: "157.180.90.43"
-  APP_NAME: "finance-backend"
-  APP_PATH: "/var/www/finance-backend"
+  NODE_VERSION: '18'
+  DEPLOY_USER: 'root'
+  DEPLOY_HOST: '157.180.90.43'
+  APP_NAME: 'finance-backend'
+  APP_PATH: '/var/www/finance-backend'
 
 before_script:
   - which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )
   - eval $(ssh-agent -s)
-  - echo "$SSH_PRIVATE_KEY" > /tmp/ssh_key
+  - echo "$SSH_PRIVATE_KEY" | base64 -d > /tmp/ssh_key
   - chmod 600 /tmp/ssh_key
   - ssh-add /tmp/ssh_key
   - rm /tmp/ssh_key
@@ -54,7 +54,7 @@ deploy:
   before_script:
     - which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )
     - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY" > /tmp/ssh_key
+    - echo "$SSH_PRIVATE_KEY" | base64 -d > /tmp/ssh_key
     - chmod 600 /tmp/ssh_key
     - ssh-add /tmp/ssh_key
     - rm /tmp/ssh_key
@@ -79,4 +79,4 @@ deploy:
     - main
   environment:
     name: production
-    url: http://157.180.90.43 
+    url: http://157.180.90.43
