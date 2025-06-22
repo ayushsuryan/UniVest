@@ -7,10 +7,11 @@ const { calculateHourlyReturns, getHourlyReturnsSummary } = require('./hourlyRet
 const initializeScheduler = () => {
   console.log('🚀 Initializing job scheduler...');
 
-  // Run hourly returns calculation every minute for testing
+  // Run per-minute returns calculation every minute
   // Cron expression: '* * * * *' means "every minute"
+  // Returns are calculated as hourly percentage divided by 60 for accurate per-minute distribution
   const hourlyReturnsJob = cron.schedule('* * * * *', async () => {
-    console.log('⏰ Hourly returns cron job triggered (every minute for testing)');
+    console.log('⏰ Per-minute returns cron job triggered');
     await calculateHourlyReturns();
   }, {
     scheduled: false,
@@ -19,14 +20,14 @@ const initializeScheduler = () => {
 
   // Start the job
   hourlyReturnsJob.start();
-  console.log('✅ Hourly returns job scheduled (runs every minute for testing)');
+  console.log('✅ Per-minute returns job scheduled (runs every minute)');
 
   // Optional: Run a summary job every 6 hours for monitoring
   const summaryJob = cron.schedule('0 */6 * * *', async () => {
-    console.log('📊 Generating hourly returns summary...');
+    console.log('📊 Generating returns summary...');
     const summary = await getHourlyReturnsSummary();
     if (summary) {
-      console.log('📈 Hourly Returns Summary:', summary);
+      console.log('📈 Returns Summary:', summary);
     }
   }, {
     scheduled: false,
@@ -37,7 +38,7 @@ const initializeScheduler = () => {
   console.log('✅ Summary job scheduled (runs every 6 hours)');
 
   // For testing: Optional immediate run (uncomment for testing)
-  console.log('🧪 Running initial hourly returns calculation for testing...');
+  console.log('🧪 Running initial per-minute returns calculation...');
   setTimeout(() => calculateHourlyReturns(), 5000); // Run after 5 seconds
 
   return {

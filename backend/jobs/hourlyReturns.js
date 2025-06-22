@@ -40,38 +40,39 @@ const calculateHourlyReturns = async () => {
           continue;
         }
 
-        // Calculate hourly return
+        // Calculate per-minute return (hourly return divided by 60)
         const hourlyReturnPercentage = investment.asset.hourlyReturnPercentage;
-        const returnAmount = (investment.investedAmount * hourlyReturnPercentage) / 100;
+        const perMinuteReturnPercentage = hourlyReturnPercentage / 60; // Divide by 60 for per-minute calculation
+        const returnAmount = (investment.investedAmount * perMinuteReturnPercentage) / 100;
         
-        // Add hourly return to investment (this updates currentValue and totalReturns)
-        await investment.addHourlyReturn(returnAmount, hourlyReturnPercentage);
+        // Add per-minute return to investment (this updates currentValue and totalReturns)
+        await investment.addHourlyReturn(returnAmount, perMinuteReturnPercentage);
         
         totalProcessed++;
         totalReturnsAdded += returnAmount;
         
-        console.log(`💰 Added ₹${returnAmount.toFixed(2)} return to ${investment.asset.name} investment for ${investment.user.firstName}`);
+        console.log(`💰 Added ₹${returnAmount.toFixed(4)} per-minute return to ${investment.asset.name} investment for ${investment.user.firstName}`);
         
       } catch (error) {
         console.error(`❌ Error processing investment ${investment._id}:`, error.message);
       }
     }
 
-    console.log(`✅ Hourly returns calculation completed:`);
+    console.log(`✅ Per-minute returns calculation completed:`);
     console.log(`   - Processed: ${totalProcessed} investments`);
-    console.log(`   - Total returns added: ₹${totalReturnsAdded.toFixed(2)}`);
+    console.log(`   - Total returns added: ₹${totalReturnsAdded.toFixed(4)}`);
     console.log(`   - Timestamp: ${new Date().toISOString()}`);
 
-    // Update asset hourly return history
+    // Update asset return history with per-minute data
     await updateAssetReturnHistory();
 
   } catch (error) {
-    console.error('❌ Error in hourly returns calculation:', error);
+    console.error('❌ Error in per-minute returns calculation:', error);
   }
 };
 
 /**
- * Update hourly return history for all assets
+ * Update per-minute return history for all assets
  */
 const updateAssetReturnHistory = async () => {
   try {
@@ -84,11 +85,12 @@ const updateAssetReturnHistory = async () => {
         status: 'active'
       });
       
-      // Add hourly return history entry
-      await asset.addHourlyReturn(asset.hourlyReturnPercentage, totalInvestments);
+      // Add per-minute return history entry (hourly percentage divided by 60)
+      const perMinuteReturnPercentage = asset.hourlyReturnPercentage / 60;
+      await asset.addHourlyReturn(perMinuteReturnPercentage, totalInvestments);
     }
     
-    console.log('📈 Asset return history updated');
+    console.log('📈 Asset per-minute return history updated');
   } catch (error) {
     console.error('❌ Error updating asset return history:', error);
   }
