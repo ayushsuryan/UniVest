@@ -106,7 +106,7 @@
   }));
 
   // Health check endpoint
-  app.get('/ayush/health', (req, res) => {
+  app.get('/api/health', (req, res) => {
     res.status(200).json({ 
       status: 'OK', 
       message: 'Finance Backend Server is running',
