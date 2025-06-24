@@ -1,7 +1,7 @@
 // Referral utility functions
 
 export const generateReferralShareURL = (referralCode: string): string => {
-  const baseURL = 'https://hourlyclub.app'; // Update with your actual app URL
+  const baseURL = 'https://Byaaj.app'; // Update with your actual app URL
   return `${baseURL}/register?ref=${referralCode}`;
 };
 
