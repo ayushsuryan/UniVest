@@ -71,16 +71,26 @@ const Signup: React.FC<SignupProps> = ({ navigation, route }) => {
 
     try {
       const result = await ReferralService.validateReferralCode(code);
-      setReferralValidation({
-        isValidating: false,
-        isValid: result.valid,
-        referrerName: result.referrerName || '',
-      });
+      
+      if (result.success) {
+        setReferralValidation({
+          isValidating: false,
+          isValid: result.data.valid,
+          referrerName: result.data.referrerName || '',
+        });
 
-      if (!result.valid) {
-        setErrors(prev => ({ ...prev, referralCode: result.message || 'Invalid referral code' }));
+        if (!result.data.valid) {
+          setErrors(prev => ({ ...prev, referralCode: result.data.message || 'Invalid referral code' }));
+        } else {
+          setErrors(prev => ({ ...prev, referralCode: '' }));
+        }
       } else {
-        setErrors(prev => ({ ...prev, referralCode: '' }));
+        setReferralValidation({
+          isValidating: false,
+          isValid: false,
+          referrerName: '',
+        });
+        setErrors(prev => ({ ...prev, referralCode: result.message || 'Invalid referral code' }));
       }
     } catch (error) {
       // Don't block signup if validation service is unavailable

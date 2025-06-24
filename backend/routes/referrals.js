@@ -1,6 +1,58 @@
 const router = require('express').Router();
 const { protect } = require('../middleware/auth');
 const ReferralService = require('../services/referralService');
+const User = require('../models/User');
+
+// Validate referral code (public endpoint for signup)
+router.post('/validate-code', async (req, res) => {
+  try {
+    const { code } = req.body; // Accept 'code' parameter to match frontend
+
+    if (!code) {
+      return res.status(400).json({
+        success: false,
+        message: 'Referral code is required',
+        data: {
+          valid: false,
+        },
+      });
+    }
+
+    // Find referrer by code
+    const referrer = await User.findOne({ referralCode: code.toUpperCase() });
+
+    if (!referrer) {
+      return res.status(200).json({
+        success: true,
+        message: 'Invalid referral code',
+        data: {
+          valid: false,
+        },
+      });
+    }
+
+    // Return success with referrer info
+    res.json({
+      success: true,
+      message: 'Valid referral code',
+      data: {
+        valid: true,
+        referrerName: `${referrer.firstName} ${referrer.lastName}`,
+        referrerTier: referrer.referralTier,
+      },
+    });
+  } catch (error) {
+    console.error('Error validating referral code:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to validate referral code',
+      data: {
+        valid: false,
+      },
+      error: error.message,
+    });
+  }
+});
 
 // Get referral team data and analytics
 router.get('/team', protect, async (req, res) => {
@@ -140,6 +192,48 @@ router.get('/stats', protect, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch referral statistics',
+      error: error.message,
+    });
+  }
+});
+
+// Get complete referral dashboard data
+router.get('/dashboard', protect, async (req, res) => {
+  try {
+    const teamData = await ReferralService.getReferralTeamData(req.user.id);
+
+    // Format the response to match frontend expectations
+    const dashboardData = {
+      referralCode: teamData.user.referralCode,
+      totalReferrals: teamData.analytics.totalMembers,
+      activeReferrals: teamData.analytics.activeMembers,
+      pendingReferrals: teamData.analytics.pendingMembers,
+      tier: teamData.user.tier,
+      referralBalance: teamData.user.referralBalance,
+      totalEarnings: teamData.analytics.totalEarnings,
+      monthlyEarnings: teamData.analytics.monthlyEarnings,
+      team: teamData.teamMembers.map(member => ({
+        id: member.id,
+        name: member.name,
+        email: member.email,
+        joinDate: member.joinDate,
+        status: member.status,
+        totalEarnings: member.earnings || 0,
+        monthlyEarnings: 0, // Calculate if needed
+        firstInvestmentDate: member.firstInvestmentDate,
+      })),
+      tierProgress: teamData.analytics.tierProgress,
+    };
+
+    res.json({
+      success: true,
+      data: dashboardData,
+    });
+  } catch (error) {
+    console.error('Error fetching referral dashboard:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch referral dashboard',
       error: error.message,
     });
   }

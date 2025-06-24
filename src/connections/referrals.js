@@ -60,9 +60,11 @@ class ReferralService {
       const response = await API.get('/referrals/dashboard');
 
       console.log('✅ Referral dashboard data fetched successfully');
+      console.log('📊 Dashboard response:', response.data);
+      
       return {
         success: true,
-        data: response.data,
+        data: response.data.data, // Extract the actual data from the nested structure
       };
     } catch (error) {
       console.error(
@@ -153,7 +155,7 @@ class ReferralService {
       console.log('✅ Referral stats fetched successfully');
       return {
         success: true,
-        data: response.data,
+        data: response.data.data, // Extract the actual data from the nested structure
       };
     } catch (error) {
       console.error(
@@ -202,32 +204,27 @@ class ReferralService {
     }
   }
 
-  // Validate referral code before signup
-  async validateReferralCode(referralCode) {
+  // Validate referral code
+  async validateReferralCode(code) {
     try {
-      console.log('🔍 Validating referral code:', referralCode);
-      const response = await API.post('/referrals/validate-code', {
-        referralCode,
-      });
+      console.log('🔍 Validating referral code:', code);
+      const response = await API.post('/referrals/validate-code', { code });
 
       console.log('✅ Referral code validation successful');
       return {
         success: true,
-        data: response.data,
-        valid: response.data.valid,
-        referrerName: response.data.referrerName,
+        data: response.data.data, // Extract the actual data from the nested structure
       };
     } catch (error) {
       console.error(
-        '❌ Failed to validate referral code:',
+        '❌ Referral code validation failed:',
         error.response?.data || error.message,
       );
       return {
         success: false,
         message:
           error.response?.data?.message ||
-          'Invalid referral code.',
-        valid: false,
+          'Invalid referral code. Please check and try again.',
       };
     }
   }
