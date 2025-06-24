@@ -133,11 +133,9 @@ referralSchema.methods.addEarning = async function (
   this.monthlyEarnings += amount;
   this.lastActiveDate = new Date();
 
-  // Update status to active if it was pending
-  if (this.status === 'pending') {
-    this.status = 'active';
-    this.firstInvestmentDate = new Date();
-  }
+  // ✅ REMOVED: Automatic status change from pending to active
+  // Status should only be changed explicitly through activateReferralOnFirstInvestment()
+  // This ensures referrals only become active when user makes their first investment
 
   return this.save();
 };

@@ -5,6 +5,7 @@ const Asset = require('../models/Asset');
 const User = require('../models/User');
 const { asyncHandler } = require('../middleware/errorHandler');
 const { protect, verifiedUserOnly } = require('../middleware/auth');
+const ReferralService = require('../services/referralService');
 
 const router = express.Router();
 
@@ -108,6 +109,28 @@ router.post(
     asset.totalInvestmentAmount += amount;
     await asset.save();
 
+    // Check if this is user's first investment and activate referral if applicable
+    try {
+      const userPreviousInvestments = await Investment.countDocuments({
+        user: req.user._id,
+        _id: { $ne: investment._id }, // Exclude current investment
+      });
+
+      // If this is the first investment, activate referral
+      if (userPreviousInvestments === 0) {
+        const referralActivation = await ReferralService.activateReferralOnFirstInvestment(req.user._id);
+        if (referralActivation && referralActivation.success) {
+          const bonusInfo = referralActivation.signupBonusAwarded > 0 
+            ? ` (with ₹${referralActivation.signupBonusAwarded} signup bonus)`
+            : '';
+          console.log(`🎯 Referral activated for user ${req.user._id}'s first investment${bonusInfo}`);
+        }
+      }
+    } catch (referralError) {
+      console.error('Error activating referral on first investment:', referralError);
+      // Don't fail the investment creation if referral activation fails
+    }
+
     // Populate investment with asset details
     await investment.populate(
       'asset',
@@ -173,8 +196,8 @@ router.get(
     const portfolioStats = {
       ...stats,
       balance: user.balance,
-      referralBalance: 0, // TODO: Implement referral system
-      referredUsers: 0, // TODO: Implement referral system
+      referralBalance: user.referralBalance, // Use actual referral balance
+      referredUsers: user.referralCount, // Use actual referral count
     };
 
     res.status(200).json({

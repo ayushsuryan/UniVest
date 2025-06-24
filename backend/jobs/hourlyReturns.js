@@ -118,7 +118,7 @@ const calculateHourlyReturns = async () => {
 const updateAssetReturnHistory = async () => {
   try {
     const assets = await Asset.find({ isActive: true });
-
+//test
     for (const asset of assets) {
       // Get total active investments for this asset
       const totalInvestments = await Investment.countDocuments({

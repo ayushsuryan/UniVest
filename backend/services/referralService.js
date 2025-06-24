@@ -27,6 +27,25 @@ class ReferralService {
         return null;
       }
 
+      // Find referral relationship record
+      let referralRecord = await Referral.findOne({
+        referrer: referrer._id,
+        referred: investor._id,
+      }).session(session);
+
+      // ✅ CRITICAL FIX: Only process earnings for ACTIVE referrals
+      if (!referralRecord) {
+        await session.commitTransaction();
+        return null; // No referral record found, no earnings
+      }
+
+      // ✅ CRITICAL FIX: Check if referral is active before processing earnings
+      if (referralRecord.status !== 'active') {
+        await session.commitTransaction();
+        console.log(`⏸️  Skipping referral earning - referral status is '${referralRecord.status}' (not active) for user ${investor._id}`);
+        return null; // Only active referrals earn money
+      }
+
       // Calculate referral earning based on tier
       const tierPercentage = referrer.getReferralTierPercentage();
       const referralEarning = (hourlyReturn * tierPercentage) / 100;
@@ -34,21 +53,6 @@ class ReferralService {
       // Update referrer's referral balance
       referrer.referralBalance += referralEarning;
       await referrer.save({ session });
-
-      // Find or create referral relationship record
-      let referralRecord = await Referral.findOne({
-        referrer: referrer._id,
-        referred: investor._id,
-      }).session(session);
-
-      if (!referralRecord) {
-        referralRecord = new Referral({
-          referrer: referrer._id,
-          referred: investor._id,
-          referralCode: investor.referredByCode || referrer.referralCode,
-          status: 'active',
-        });
-      }
 
       // Add earning to referral record
       await referralRecord.addEarning(
@@ -309,6 +313,85 @@ class ReferralService {
     } catch (error) {
       await session.abortTransaction();
       console.error('Error withdrawing referral balance:', error);
+      throw error;
+    } finally {
+      session.endSession();
+    }
+  }
+
+  // Activate referral on first investment
+  static async activateReferralOnFirstInvestment(userId) {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      // Get the user who made the investment
+      const investor = await User.findById(userId).session(session);
+
+      if (!investor || !investor.referredBy) {
+        await session.commitTransaction();
+        return null; // No referrer, nothing to activate
+      }
+
+      // Get the referrer
+      const referrer = await User.findById(investor.referredBy).session(session);
+
+      if (!referrer) {
+        await session.commitTransaction();
+        return null;
+      }
+
+      // Find referral relationship record
+      let referralRecord = await Referral.findOne({
+        referrer: investor.referredBy,
+        referred: userId,
+      }).session(session);
+
+      if (!referralRecord) {
+        await session.commitTransaction();
+        return null; // No referral record found
+      }
+
+      // Only activate if currently pending
+      if (referralRecord.status === 'pending') {
+        referralRecord.status = 'active';
+        referralRecord.firstInvestmentDate = new Date();
+        referralRecord.lastActiveDate = new Date();
+        await referralRecord.save({ session });
+
+        // Optional: Give signup bonus to referrer (configurable)
+        const SIGNUP_BONUS = parseInt(process.env.REFERRAL_SIGNUP_BONUS) || 0;
+        if (SIGNUP_BONUS > 0) {
+          referrer.referralBalance += SIGNUP_BONUS;
+          await referrer.save({ session });
+
+          // Record the signup bonus as an earning
+          await referralRecord.addEarning(
+            SIGNUP_BONUS,
+            null, // No specific investment
+            'Signup Bonus',
+            SIGNUP_BONUS,
+            100, // 100% bonus
+          );
+
+          console.log(`💰 Signup bonus of ₹${SIGNUP_BONUS} awarded to referrer ${referrer._id}`);
+        }
+
+        console.log(`🎯 Referral activated: User ${userId} made their first investment`);
+      }
+
+      await session.commitTransaction();
+
+      return {
+        success: true,
+        referralId: referralRecord._id,
+        status: referralRecord.status,
+        referrerId: investor.referredBy,
+        signupBonusAwarded: parseInt(process.env.REFERRAL_SIGNUP_BONUS) || 0,
+      };
+    } catch (error) {
+      await session.abortTransaction();
+      console.error('Error activating referral on first investment:', error);
       throw error;
     } finally {
       session.endSession();
