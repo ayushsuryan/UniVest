@@ -53,54 +53,35 @@ API.interceptors.response.use(
 );
 
 class ReferralService {
-  // Get team data and analytics
-  async getTeamData() {
+  // Get complete referral dashboard data
+  async getReferralDashboard() {
     try {
-      console.log('👥 Fetching team data...');
-      const response = await API.get('/referrals/team');
+      console.log('📊 Fetching referral dashboard data...');
+      const response = await API.get('/referrals/dashboard');
 
-      console.log('✅ Team data fetched successfully');
+      console.log('✅ Referral dashboard data fetched successfully');
       return {
         success: true,
-        data: response.data.data,
+        data: response.data,
       };
     } catch (error) {
       console.error(
-        '❌ Failed to fetch team data:',
+        '❌ Failed to fetch referral dashboard:',
         error.response?.data || error.message,
       );
       return {
         success: false,
         message:
           error.response?.data?.message ||
-          'Failed to fetch team data. Please try again.',
+          'Failed to fetch referral dashboard. Please try again.',
       };
     }
   }
 
-  // Get referral statistics
-  async getReferralStats() {
-    try {
-      console.log('📊 Fetching referral statistics...');
-      const response = await API.get('/referrals/stats');
-
-      console.log('✅ Referral stats fetched successfully');
-      return {
-        success: true,
-        data: response.data.data,
-      };
-    } catch (error) {
-      console.error(
-        '❌ Failed to fetch referral stats:',
-        error.response?.data || error.message,
-      );
-      return {
-        success: false,
-        message:
-          error.response?.data?.message ||
-          'Failed to fetch referral statistics. Please try again.',
-      };
-    }
+  // Get team data (for backward compatibility)
+  async getTeamData() {
+    // Use the new dashboard endpoint
+    return this.getReferralDashboard();
   }
 
   // Get referral earnings history
@@ -114,7 +95,7 @@ class ReferralService {
       console.log('✅ Earnings history fetched successfully');
       return {
         success: true,
-        data: response.data.data,
+        data: response.data,
       };
     } catch (error) {
       console.error(
@@ -137,13 +118,14 @@ class ReferralService {
       const response = await API.post('/referrals/withdraw', { amount });
 
       if (response.data.success) {
-        showToast.success(response.data.message, 'Success');
+        showToast.success(response.data.message || 'Withdrawal successful!', 'Success');
         console.log('✅ Referral balance withdrawn successfully');
       }
 
       return {
         success: true,
-        data: response.data.data,
+        data: response.data,
+        message: response.data.message,
       };
     } catch (error) {
       console.error(
@@ -162,7 +144,32 @@ class ReferralService {
     }
   }
 
-  // Apply referral code (for new users during signup)
+  // Get referral statistics (quick stats)
+  async getReferralStats() {
+    try {
+      console.log('📊 Fetching referral statistics...');
+      const response = await API.get('/referrals/stats');
+
+      console.log('✅ Referral stats fetched successfully');
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      console.error(
+        '❌ Failed to fetch referral stats:',
+        error.response?.data || error.message,
+      );
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          'Failed to fetch referral statistics. Please try again.',
+      };
+    }
+  }
+
+  // Apply referral code (for new users during signup) - not needed as it's handled in registration
   async applyReferralCode(referralCode) {
     try {
       console.log('🎯 Applying referral code:', referralCode);
@@ -177,7 +184,7 @@ class ReferralService {
 
       return {
         success: true,
-        data: response.data.data,
+        data: response.data,
       };
     } catch (error) {
       console.error(
@@ -191,6 +198,36 @@ class ReferralService {
       return {
         success: false,
         message,
+      };
+    }
+  }
+
+  // Validate referral code before signup
+  async validateReferralCode(referralCode) {
+    try {
+      console.log('🔍 Validating referral code:', referralCode);
+      const response = await API.post('/referrals/validate-code', {
+        referralCode,
+      });
+
+      console.log('✅ Referral code validation successful');
+      return {
+        success: true,
+        data: response.data,
+        valid: response.data.valid,
+        referrerName: response.data.referrerName,
+      };
+    } catch (error) {
+      console.error(
+        '❌ Failed to validate referral code:',
+        error.response?.data || error.message,
+      );
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          'Invalid referral code.',
+        valid: false,
       };
     }
   }

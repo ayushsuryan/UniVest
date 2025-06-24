@@ -4,25 +4,51 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import { showToast } from '../../utils/toast';
 import ReferralService from '../../connections/referrals';
+import { 
+    getTierInfo, 
+    getStatusColor, 
+    getStatusMessage, 
+    generateReferralShareMessage,
+    formatReferralEarnings 
+} from '../../utils/referralUtils';
 
 interface TeamMember {
     id: string;
     name: string;
+    email: string;
     joinDate: string;
-    reward: number;
     status: 'active' | 'pending' | 'inactive';
-    earnings: number;
-    avatar?: string;
+    totalEarnings: number;
+    monthlyEarnings: number;
+    firstInvestmentDate?: string;
+}
+
+interface ReferralDashboardData {
+    referralCode: string;
+    totalReferrals: number;
+    activeReferrals: number;
+    pendingReferrals: number;
+    tier: string;
+    referralBalance: number;
+    totalEarnings: number;
+    monthlyEarnings: number;
+    team: TeamMember[];
+    tierProgress: {
+        current: string;
+        next: string;
+        referralsNeeded: number;
+        percentage: number;
+    };
 }
 
 const Team: React.FC = () => {
     const [refreshing, setRefreshing] = useState(false);
     const [loading, setLoading] = useState(true);
     const [selectedTab, setSelectedTab] = useState('all');
-    const [teamData, setTeamData] = useState<any>(null);
+    const [dashboardData, setDashboardData] = useState<ReferralDashboardData | null>(null);
 
-    // Load team data
-    const loadTeamData = async (showRefreshIndicator = false) => {
+    // Load referral dashboard data
+    const loadDashboardData = async (showRefreshIndicator = false) => {
         try {
             if (showRefreshIndicator) {
                 setRefreshing(true);
@@ -30,16 +56,16 @@ const Team: React.FC = () => {
                 setLoading(true);
             }
 
-            const response = await ReferralService.getTeamData();
+            const response = await ReferralService.getReferralDashboard();
 
             if (response.success && response.data) {
-                setTeamData(response.data);
+                setDashboardData(response.data);
             } else {
-                showToast.error(response.message || 'Failed to load team data');
+                showToast.error(response.message || 'Failed to load referral data');
             }
         } catch (error) {
-            console.error('Error loading team data:', error);
-            showToast.error('Failed to load team data. Please try again.');
+            console.error('Error loading referral dashboard:', error);
+            showToast.error('Failed to load referral data. Please try again.');
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -47,22 +73,22 @@ const Team: React.FC = () => {
     };
 
     useEffect(() => {
-        loadTeamData();
+        loadDashboardData();
     }, []);
 
     const onRefresh = () => {
-        loadTeamData(true);
+        loadDashboardData(true);
     };
 
     const shareReferralCode = async () => {
-        if (!teamData?.user?.referralCode) return;
+        if (!dashboardData?.referralCode) return;
 
         try {
-            const message = `Join UniVest and start investing with my referral code: ${teamData.user.referralCode}\n\nGet ₹250 bonus on your first investment!\n\nDownload now: https://univest.app/invite`;
+            const message = generateReferralShareMessage(dashboardData.referralCode);
 
             await Share.share({
                 message,
-                title: 'Join UniVest',
+                title: 'Join Hourly Club - Get ₹250 Bonus!',
             });
         } catch (error) {
             console.error('Error sharing:', error);
@@ -70,62 +96,46 @@ const Team: React.FC = () => {
     };
 
     const copyReferralCode = () => {
-        if (!teamData?.user?.referralCode) return;
+        if (!dashboardData?.referralCode) return;
 
-        Clipboard.setString(teamData.user.referralCode);
-        showToast.success('Referral code copied!', 'Success');
+        Clipboard.setString(dashboardData.referralCode);
+        showToast.success('Referral code copied to clipboard!', 'Success');
     };
 
     const withdrawBalance = async () => {
-        if (!teamData?.user?.referralBalance || teamData.user.referralBalance <= 0) {
+        if (!dashboardData?.referralBalance || dashboardData.referralBalance <= 0) {
             showToast.error('No balance to withdraw');
             return;
         }
 
         try {
-            const result = await ReferralService.withdrawReferralBalance(teamData.user.referralBalance);
+            const result = await ReferralService.withdrawReferralBalance(dashboardData.referralBalance);
 
             if (result.success) {
+                showToast.success('Withdrawal successful! Amount transferred to main balance.', 'Success');
                 // Reload data to get updated balances
-                loadTeamData();
+                loadDashboardData();
             }
         } catch (error) {
             console.error('Error withdrawing balance:', error);
         }
     };
 
-    const filteredMembers = teamData?.teamMembers?.filter((member: TeamMember) => {
+    const filteredMembers = dashboardData?.team?.filter((member: TeamMember) => {
         if (selectedTab === 'all') return true;
         return member.status === selectedTab;
     }) || [];
-
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'active': return '#10b981';
-            case 'pending': return '#f59e0b';
-            case 'inactive': return '#6b7280';
-            default: return '#6b7280';
-        }
-    };
-
-    const getRankGradient = (rank: string) => {
-        switch (rank.toLowerCase()) {
-            case 'bronze': return '#CD7F32';
-            case 'silver': return '#C0C0C0';
-            case 'gold': return '#FFD700';
-            case 'diamond': return '#6B5B95';
-            default: return '#6B7280';
-        }
-    };
 
     if (loading) {
         return (
             <SafeAreaView className="flex-1 justify-center items-center" style={{ backgroundColor: '#f0f9ff' }}>
                 <ActivityIndicator size="large" color="#3b82f6" />
-                <Text className="text-gray-600 mt-4">Loading team data...</Text>
+                <Text className="text-gray-600 mt-4">Loading referral dashboard...</Text>
             </SafeAreaView>
         );
     }
+
+    const tierInfo = getTierInfo(dashboardData?.tier || 'bronze');
 
     return (
         <SafeAreaView className="flex-1" style={{ backgroundColor: '#f0f9ff' }}>
@@ -163,36 +173,44 @@ const Team: React.FC = () => {
                         </TouchableOpacity>
                     </View>
 
-                    {/* Rank Card */}
+                    {/* Tier Card */}
                     <View
                         className="rounded-3xl p-6 mb-6 shadow-2xl"
-                        style={{ backgroundColor: getRankGradient(teamData?.user?.tier || 'bronze') }}
+                        style={{ backgroundColor: tierInfo.color }}
                     >
                         <View className="flex-row items-center justify-between mb-4">
                             <View className="flex-row items-center">
                                 <View className="w-14 h-14 bg-white rounded-2xl items-center justify-center mr-3 shadow-lg">
-                                    <FeatherIcon name="award" size={28} color={getRankGradient(teamData?.user?.tier || 'bronze')} />
+                                    <Text style={{ fontSize: 24 }}>{tierInfo.icon}</Text>
                                 </View>
                                 <View>
-                                    <Text className="text-white text-sm font-medium opacity-90">Current Rank</Text>
-                                    <Text className="text-white text-2xl font-black capitalize">{teamData?.user?.tier || 'Bronze'}</Text>
+                                    <Text className="text-white text-sm font-medium opacity-90">Current Tier</Text>
+                                    <Text className="text-white text-2xl font-black capitalize">
+                                        {dashboardData?.tier || 'Bronze'} ({tierInfo.rate})
+                                    </Text>
                                 </View>
                             </View>
                             <View className="items-end">
                                 <Text className="text-white text-sm font-medium opacity-90">
-                                    Next: {teamData?.analytics?.tierProgress?.nextTier || 'Silver'}
+                                    Next: {dashboardData?.tierProgress?.next || tierInfo.next}
                                 </Text>
                                 <View className="w-24 h-2 bg-white/20 rounded-full mt-2">
                                     <View
                                         className="h-full bg-white rounded-full"
-                                        style={{ width: `${teamData?.analytics?.tierProgress?.percentage || 0}%` }}
+                                        style={{ width: `${dashboardData?.tierProgress?.percentage || 0}%` }}
                                     />
                                 </View>
                                 <Text className="text-white text-xs font-bold mt-1">
-                                    {teamData?.analytics?.tierProgress?.percentage || 0}%
+                                    {dashboardData?.tierProgress?.percentage || 0}%
                                 </Text>
                             </View>
                         </View>
+                        
+                        {dashboardData?.tierProgress?.referralsNeeded && dashboardData.tierProgress.referralsNeeded > 0 && (
+                            <Text className="text-white text-xs opacity-90">
+                                {dashboardData.tierProgress.referralsNeeded} more referrals needed for {dashboardData.tierProgress.next}
+                            </Text>
+                        )}
                     </View>
 
                     {/* Stats Cards */}
@@ -203,12 +221,12 @@ const Team: React.FC = () => {
                                     <FeatherIcon name="users" size={24} color="#3b82f6" />
                                 </View>
                                 <Text className="text-2xl font-black text-gray-900">
-                                    {teamData?.analytics?.totalMembers || 0}
+                                    {dashboardData?.totalReferrals || 0}
                                 </Text>
                             </View>
                             <Text className="text-gray-600 text-sm font-medium">Total Team</Text>
-                            <Text className="text-green-600 text-xs font-bold mt-1">
-                                {teamData?.analytics?.pendingMembers || 0} pending
+                            <Text className="text-orange-600 text-xs font-bold mt-1">
+                                {dashboardData?.pendingReferrals || 0} pending
                             </Text>
                         </View>
 
@@ -218,12 +236,12 @@ const Team: React.FC = () => {
                                     <FeatherIcon name="activity" size={24} color="#10b981" />
                                 </View>
                                 <Text className="text-2xl font-black text-gray-900">
-                                    {teamData?.analytics?.activeMembers || 0}
+                                    {dashboardData?.activeReferrals || 0}
                                 </Text>
                             </View>
                             <Text className="text-gray-600 text-sm font-medium">Active Members</Text>
-                            <Text className="text-blue-600 text-xs font-bold mt-1">
-                                {teamData?.analytics?.conversionRate || '0'}% conversion
+                            <Text className="text-green-600 text-xs font-bold mt-1">
+                                Earning {tierInfo.rate}
                             </Text>
                         </View>
 
@@ -233,7 +251,7 @@ const Team: React.FC = () => {
                                     <FeatherIcon name="gift" size={24} color="#8b5cf6" />
                                 </View>
                                 <Text className="text-2xl font-black text-gray-900">
-                                    ₹{teamData?.analytics?.totalEarnings || 0}
+                                    ₹{dashboardData?.totalEarnings || 0}
                                 </Text>
                             </View>
                             <Text className="text-gray-600 text-sm font-medium">Total Earnings</Text>
@@ -246,12 +264,12 @@ const Team: React.FC = () => {
                                     <FeatherIcon name="trending-up" size={24} color="#f97316" />
                                 </View>
                                 <Text className="text-2xl font-black text-gray-900">
-                                    ₹{teamData?.analytics?.monthlyEarnings || 0}
+                                    ₹{dashboardData?.monthlyEarnings || 0}
                                 </Text>
                             </View>
                             <Text className="text-gray-600 text-sm font-medium">This Month</Text>
                             <Text className="text-orange-600 text-xs font-bold mt-1">
-                                From {teamData?.analytics?.activeMembers || 0} active users
+                                From {dashboardData?.activeReferrals || 0} active users
                             </Text>
                         </View>
                     </View>
@@ -262,7 +280,7 @@ const Team: React.FC = () => {
                             <View>
                                 <Text className="text-white/90 text-sm font-medium mb-1">Your Referral Code</Text>
                                 <Text className="text-white text-3xl font-black tracking-wider">
-                                    {teamData?.user?.referralCode || 'LOADING...'}
+                                    {dashboardData?.referralCode || 'LOADING...'}
                                 </Text>
                             </View>
                             <TouchableOpacity
@@ -280,10 +298,10 @@ const Team: React.FC = () => {
                                 <View>
                                     <Text className="text-white/80 text-sm">Referral Balance</Text>
                                     <Text className="text-white text-2xl font-black">
-                                        ₹{teamData?.user?.referralBalance || 0}
+                                        ₹{dashboardData?.referralBalance || 0}
                                     </Text>
                                 </View>
-                                {(teamData?.user?.referralBalance || 0) > 0 && (
+                                {(dashboardData?.referralBalance || 0) > 0 && (
                                     <TouchableOpacity
                                         onPress={withdrawBalance}
                                         className="bg-white rounded-xl px-4 py-2"
@@ -309,6 +327,12 @@ const Team: React.FC = () => {
                             <TouchableOpacity
                                 className="bg-white/20 rounded-2xl px-6 py-4"
                                 activeOpacity={0.8}
+                                onPress={() => {
+                                    showToast.success(
+                                        `Share your code with friends. They get ₹250 bonus on first investment, you earn ${tierInfo.rate} of their returns!`,
+                                        'How it works'
+                                    );
+                                }}
                             >
                                 <View className="flex-row items-center justify-center">
                                     <FeatherIcon name="info" size={20} color="white" />
@@ -381,15 +405,20 @@ const Team: React.FC = () => {
                                             </Text>
                                             <View className="flex-row items-center">
                                                 <Text className="text-gray-500 text-xs mr-3">
-                                                    Earned: ₹{member.earnings}
+                                                    Earned: ₹{member.totalEarnings}
                                                 </Text>
                                                 <View className="px-3 py-1 bg-green-50 rounded-xl">
                                                     <Text className="text-green-600 font-black text-xs">
-                                                        +₹{member.reward}
+                                                        +₹{member.monthlyEarnings}
                                                     </Text>
                                                 </View>
                                             </View>
                                         </View>
+                                        {member.status === 'pending' && (
+                                            <Text className="text-orange-500 text-xs mt-1 font-medium">
+                                                💡 Will activate when they make their first investment
+                                            </Text>
+                                        )}
                                     </View>
                                 </View>
                             </TouchableOpacity>
@@ -397,11 +426,28 @@ const Team: React.FC = () => {
 
                         {filteredMembers.length === 0 && (
                             <View className="items-center py-12">
-                                <Text className="text-gray-500 text-lg">
+                                <View className="w-20 h-20 bg-blue-100 rounded-full items-center justify-center mb-4">
+                                    <FeatherIcon name="users" size={40} color="#3b82f6" />
+                                </View>
+                                <Text className="text-gray-500 text-lg font-medium text-center mb-2">
                                     {selectedTab === 'all'
-                                        ? 'No team members yet. Share your referral code to start building your team!'
+                                        ? 'No team members yet'
                                         : `No ${selectedTab} members found`}
                                 </Text>
+                                {selectedTab === 'all' && (
+                                    <>
+                                        <Text className="text-gray-400 text-sm text-center mb-4">
+                                            Share your referral code to start building your team!
+                                        </Text>
+                                        <TouchableOpacity
+                                            onPress={shareReferralCode}
+                                            className="bg-blue-600 rounded-xl px-6 py-3"
+                                            activeOpacity={0.8}
+                                        >
+                                            <Text className="text-white font-bold">Share Your Code</Text>
+                                        </TouchableOpacity>
+                                    </>
+                                )}
                             </View>
                         )}
                     </View>

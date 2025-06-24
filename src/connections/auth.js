@@ -137,7 +137,8 @@ class AuthService {
         lastName: userData.lastName,
         email: userData.email,
         password: userData.password,
-        phone: userData.phone || undefined
+        phone: userData.phone || undefined,
+        referralCode: userData.referralCode || undefined
       });
 
       console.log('✅ SIGNUP DEBUG - Registration API call successful!');

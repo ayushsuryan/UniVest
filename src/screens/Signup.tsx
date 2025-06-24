@@ -1,17 +1,19 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Image, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import CustomInput from '../Components/CustomInput';
 import { useAuth } from '../context/AuthContext';
 import { showToast } from '../utils/toast';
 import AuthService from '../connections/auth';
+import ReferralService from '../connections/referrals';
 
 interface SignupProps {
   navigation: any;
+  route?: any; // Add route prop to get referral code from navigation
 }
 
-const Signup: React.FC<SignupProps> = ({ navigation }) => {
+const Signup: React.FC<SignupProps> = ({ navigation, route }) => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -19,16 +21,77 @@ const Signup: React.FC<SignupProps> = ({ navigation }) => {
     phoneNumber: '',
     password: '',
     confirmPassword: '',
+    referralCode: '', // Add referral code field
   });
   const { signup, isLoading } = useAuth();
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [debugVisible, setDebugVisible] = useState(false);
+  const [referralValidation, setReferralValidation] = useState<{
+    isValidating: boolean;
+    isValid: boolean | null;
+    referrerName: string;
+  }>({
+    isValidating: false,
+    isValid: null,
+    referrerName: '',
+  });
+
+  // Check for referral code from navigation params or deep link
+  useEffect(() => {
+    const referralCode = route?.params?.referralCode;
+    if (referralCode) {
+      setFormData(prev => ({ ...prev, referralCode }));
+      validateReferralCode(referralCode);
+    }
+  }, [route?.params?.referralCode]);
 
   const updateFormData = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+
+    // Validate referral code when it changes
+    if (field === 'referralCode' && value.trim()) {
+      validateReferralCode(value.trim());
+    } else if (field === 'referralCode' && !value.trim()) {
+      setReferralValidation({
+        isValidating: false,
+        isValid: null,
+        referrerName: '',
+      });
+    }
+  };
+
+  const validateReferralCode = async (code: string) => {
+    if (!code.trim()) return;
+
+    setReferralValidation(prev => ({ ...prev, isValidating: true }));
+
+    try {
+      const result = await ReferralService.validateReferralCode(code);
+      setReferralValidation({
+        isValidating: false,
+        isValid: result.valid,
+        referrerName: result.referrerName || '',
+      });
+
+      if (!result.valid) {
+        setErrors(prev => ({ ...prev, referralCode: result.message || 'Invalid referral code' }));
+      } else {
+        setErrors(prev => ({ ...prev, referralCode: '' }));
+      }
+    } catch (error) {
+      // Don't block signup if validation service is unavailable
+      console.log('Referral validation service unavailable:', error);
+      setReferralValidation({
+        isValidating: false,
+        isValid: null, // Unknown state - don't block signup
+        referrerName: '',
+      });
+      // Clear any previous errors since we can't validate
+      setErrors(prev => ({ ...prev, referralCode: '' }));
     }
   };
 
@@ -69,17 +132,20 @@ const Signup: React.FC<SignupProps> = ({ navigation }) => {
       newErrors.confirmPassword = 'Passwords do not match';
     }
 
+    // Validate referral code if provided
+    if (formData.referralCode.trim() && referralValidation.isValid === false) {
+      newErrors.referralCode = 'Please enter a valid referral code or leave it empty';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
 
   const handleSignup = async () => {
     if (!validateForm()) return;
 
     try {
       // First test connectivity
-
       console.log('🚀 SIGNUP PAGE - Starting signup process...');
 
       const result = await signup({
@@ -87,7 +153,8 @@ const Signup: React.FC<SignupProps> = ({ navigation }) => {
         lastName: formData.lastName,
         email: formData.email,
         password: formData.password,
-        phone: formData.phoneNumber
+        phone: formData.phoneNumber,
+        referralCode: formData.referralCode.trim() || undefined // Include referral code
       });
 
       console.log('🚀 SIGNUP PAGE - Signup result:', result);
@@ -233,6 +300,54 @@ const Signup: React.FC<SignupProps> = ({ navigation }) => {
               <Text className="text-emerald-600 text-xs">• One uppercase and lowercase letter</Text>
               <Text className="text-emerald-600 text-xs">• At least one number</Text>
             </View>
+          </View>
+
+          {/* Referral Code Section */}
+          <View className="mb-4">
+            <CustomInput
+              label="Referral Code (Optional)"
+              placeholder="Enter referral code to get ₹250 bonus"
+              value={formData.referralCode}
+              onChangeText={(text) => updateFormData('referralCode', text.toUpperCase())}
+              error={errors.referralCode}
+            />
+            
+            {/* Referral Code Validation Feedback */}
+            {referralValidation.isValidating && formData.referralCode.trim() && (
+              <View className="flex-row items-center mt-2 px-3">
+                <FeatherIcon name="loader" size={16} color="#6b7280" />
+                <Text className="text-gray-500 text-sm ml-2">Validating referral code...</Text>
+              </View>
+            )}
+            
+            {referralValidation.isValid === true && formData.referralCode.trim() && (
+              <View className="mt-2 p-3 rounded-lg" style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}>
+                <View className="flex-row items-center">
+                  <FeatherIcon name="check-circle" size={16} color="#10b981" />
+                  <Text className="text-emerald-600 text-sm font-medium ml-2">
+                    Valid referral code! 
+                    {referralValidation.referrerName && ` Referred by ${referralValidation.referrerName}`}
+                  </Text>
+                </View>
+                <Text className="text-emerald-600 text-xs mt-1">
+                  🎉 You'll get ₹250 bonus on your first investment!
+                </Text>
+              </View>
+            )}
+            
+            {referralValidation.isValid === false && formData.referralCode.trim() && !referralValidation.isValidating && (
+              <View className="mt-2 p-3 rounded-lg" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)' }}>
+                <View className="flex-row items-center">
+                  <FeatherIcon name="x-circle" size={16} color="#ef4444" />
+                  <Text className="text-red-600 text-sm font-medium ml-2">
+                    Invalid referral code
+                  </Text>
+                </View>
+                <Text className="text-red-600 text-xs mt-1">
+                  Please check the code or leave this field empty
+                </Text>
+              </View>
+            )}
           </View>
 
           <TouchableOpacity

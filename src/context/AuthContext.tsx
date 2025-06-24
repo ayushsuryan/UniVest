@@ -52,6 +52,7 @@ interface SignupData {
   email: string;
   password: string;
   phone?: string;
+  referralCode?: string;
 }
 
 // Action Types
