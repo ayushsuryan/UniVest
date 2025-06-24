@@ -8,7 +8,7 @@ export const generateReferralShareURL = (referralCode: string): string => {
 export const generateReferralShareMessage = (referralCode: string, userName?: string): string => {
   const shareURL = generateReferralShareURL(referralCode);
   
-  return `🚀 ${userName ? `${userName} invited you to` : 'Join me on'} Hourly Club and start earning! 
+  return `🚀 ${userName ? `${userName} invited you to` : 'Join me on'} Byaaj and start earning! 
 
 Use my referral code: ${referralCode}
 

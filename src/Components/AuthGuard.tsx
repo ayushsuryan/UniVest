@@ -44,7 +44,7 @@ const AuthLoadingScreen: React.FC = () => (
       </View>
       
       <Text className="text-gray-900 text-2xl font-black mb-2">
-        Hourly Club
+        Byaaj
       </Text>
       
       <Text className="text-gray-600 text-base mb-8">

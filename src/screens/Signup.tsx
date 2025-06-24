@@ -235,7 +235,7 @@ const Signup: React.FC<SignupProps> = ({ navigation, route }) => {
             Create Account
           </Text>
           <Text className="text-gray-600 text-sm text-center leading-5">
-            Join Hourly Club and start your
+            Join Byaaj and start your
           </Text>
           <Text className="text-gray-600 text-sm text-center">
             journey to financial freedom

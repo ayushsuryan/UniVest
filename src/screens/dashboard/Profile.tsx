@@ -355,7 +355,7 @@ const Profile: React.FC = () => {
           
           <View className="mt-6 items-center">
             <Text className="text-gray-400 text-sm text-center">
-              Hourly Club v2.1.0
+              Byaaj v2.1.0
             </Text>
             <Text className="text-gray-400 text-xs text-center mt-1">
               Your investments are secured with bank-level encryption

@@ -246,7 +246,7 @@ const Landing: React.FC<LandingProps> = ({ navigation }) => {
 
             <View className="items-center mb-10">
               <Text className="text-gray-800 text-4xl font-black text-center mb-3">
-                <Text className="text-emerald-600">Hourly Club</Text>
+                <Text className="text-emerald-600">Byaaj</Text>
               </Text>
               <View
                 className="rounded-full px-6 py-3 border border-emerald-200"

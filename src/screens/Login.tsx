@@ -107,7 +107,7 @@ const Login: React.FC<LoginProps> = ({navigation}) => {
             Welcome Back
           </Text>
           <Text className="text-gray-600 text-base text-center leading-6">
-            Sign in to your Hourly Club account and
+            Sign in to your Byaaj account and
           </Text>
           <Text className="text-gray-600 text-base text-center">
             continue building your wealth

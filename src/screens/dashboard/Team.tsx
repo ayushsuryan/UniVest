@@ -88,7 +88,7 @@ const Team: React.FC = () => {
 
             await Share.share({
                 message,
-                title: 'Join Hourly Club - Get ₹250 Bonus!',
+                title: 'Join Byaaj - Get ₹250 Bonus!',
             });
         } catch (error) {
             console.error('Error sharing:', error);
