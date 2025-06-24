@@ -74,6 +74,7 @@ router.post(
       console.log(`✅ User created successfully: ${email}`);
 
       // Apply referral code if provided
+      let referralBonusMessage = '';
       if (referralCode) {
         try {
           const referralResult = await ReferralService.applyReferralCode(
@@ -84,6 +85,9 @@ router.post(
             console.log(
               `🎯 Referral code ${referralCode} applied successfully for user ${email}`,
             );
+            if (referralResult.signupBonusAwarded > 0) {
+              referralBonusMessage = referralResult.message;
+            }
           } else {
             console.log(
               `⚠️ Failed to apply referral code ${referralCode}: ${referralResult.message}`,
@@ -130,16 +134,24 @@ router.post(
         emailSent = false;
       }
 
-      // Reload user to get the generated referral code
+      // Reload user to get the generated referral code and updated balance
       const updatedUser = await User.findById(user._id);
+
+      let baseMessage = emailSent
+        ? 'User registered successfully. Please check your email for verification code.'
+        : 'User registered successfully. Email service is temporarily unavailable, but you can still verify your account.';
+      
+      // Add referral bonus message if applicable
+      if (referralBonusMessage) {
+        baseMessage += ` ${referralBonusMessage}`;
+      }
 
       const response = {
         success: true,
-        message: emailSent
-          ? 'User registered successfully. Please check your email for verification code.'
-          : 'User registered successfully. Email service is temporarily unavailable, but you can still verify your account.',
+        message: baseMessage,
         user: updatedUser.getPublicProfile(),
         emailSent: emailSent,
+        referralBonus: referralBonusMessage ? true : false,
       };
 
       console.log(`🎉 Registration successful for: ${email}`);

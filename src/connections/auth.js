@@ -431,18 +431,25 @@ class AuthService {
   // Logout
   async logout() {
     try {
-      // Call logout endpoint
-      await API.post('/auth/logout');
-    } catch (error) {
-      console.log('Logout API call failed:', error);
-      // Continue with local logout even if API call fails
-    } finally {
+      // Skip API call - just perform local cleanup
+      console.log('🚪 Logging out - performing local cleanup only');
+      
       // Clear local storage
       await AsyncStorage.removeItem('userToken');
       await AsyncStorage.removeItem('userData');
       delete API.defaults.headers.common['Authorization'];
       
       console.log('✅ Logged out successfully');
+    } catch (error) {
+      console.error('❌ Logout cleanup failed:', error);
+      // Still try to clear what we can
+      try {
+        await AsyncStorage.removeItem('userToken');
+        await AsyncStorage.removeItem('userData');
+        delete API.defaults.headers.common['Authorization'];
+      } catch (cleanupError) {
+        console.error('❌ Emergency cleanup failed:', cleanupError);
+      }
     }
   }
 

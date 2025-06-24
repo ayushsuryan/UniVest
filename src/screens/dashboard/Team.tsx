@@ -415,8 +415,8 @@ const Team: React.FC = () => {
                                             </View>
                                         </View>
                                         {member.status === 'pending' && (
-                                            <Text className="text-orange-500 text-xs mt-1 font-medium">
-                                                💡 Will activate when they make their first investment
+                                            <Text className="text-green-500 text-xs mt-1 font-medium">
+                                                Will activate when they make their first investment
                                             </Text>
                                         )}
                                     </View>

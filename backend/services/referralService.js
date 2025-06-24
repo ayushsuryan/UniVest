@@ -98,6 +98,14 @@ class ReferralService {
       const newUser = await User.findById(newUserId).session(session);
       newUser.referredBy = referrer._id;
       newUser.referredByCode = referralCode;
+      
+      // Award immediate signup bonus to the referred user
+      const SIGNUP_BONUS = parseInt(process.env.REFERRAL_SIGNUP_BONUS) || 250;
+      if (SIGNUP_BONUS > 0) {
+        newUser.balance += SIGNUP_BONUS;
+        console.log(`🎁 Signup bonus of ₹${SIGNUP_BONUS} awarded to referred user ${newUser._id}`);
+      }
+      
       await newUser.save({ session });
 
       // Increment referrer's count and update tier
@@ -114,6 +122,17 @@ class ReferralService {
       });
       await referralRecord.save({ session });
 
+      // Record the signup bonus as an earning in the referral record
+      if (SIGNUP_BONUS > 0) {
+        await referralRecord.addEarning(
+          SIGNUP_BONUS,
+          null, // No specific investment
+          'Signup Bonus (Referred User)',
+          SIGNUP_BONUS,
+          100, // 100% bonus
+        );
+      }
+
       await session.commitTransaction();
 
       return {
@@ -121,6 +140,8 @@ class ReferralService {
         referrerId: referrer._id,
         newTier: referrer.referralTier,
         totalReferrals: referrer.referralCount,
+        signupBonusAwarded: SIGNUP_BONUS,
+        message: SIGNUP_BONUS > 0 ? `Welcome! You've received a ₹${SIGNUP_BONUS} signup bonus!` : 'Referral code applied successfully',
       };
     } catch (error) {
       await session.abortTransaction();
