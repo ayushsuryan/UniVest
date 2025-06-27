@@ -216,46 +216,9 @@ const CustomBottomTabBar: React.FC<CustomBottomTabBarProps> = ({
                     }}
                   />
 
-                  {isFocused && (
-                    <Animated.View
-                      style={{
-                        opacity: animatedValues[index],
-                        transform: [
-                          {
-                            translateY: animatedValues[index].interpolate({
-                              inputRange: [0, 1],
-                              outputRange: [10, 0],
-                            }),
-                          },
-                        ],
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: '#059669',
-                          fontSize: 12,
-                          fontWeight: '700',
-                          textAlign: 'center',
-                        }}
-                      >
-                        {route.name}
-                      </Text>
-                    </Animated.View>
-                  )}
+                
 
-                  {!isFocused && (
-                    <Text
-                      style={{
-                        color: '#9CA3AF',
-                        fontSize: 11,
-                        fontWeight: '600',
-                        textAlign: 'center',
-                        marginTop: 2,
-                      }}
-                    >
-                      {route.name}''
-                    </Text>
-                  )}
+            
                 </Animated.View>
               </Animated.View>
 
