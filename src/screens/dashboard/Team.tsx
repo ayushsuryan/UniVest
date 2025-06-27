@@ -324,21 +324,7 @@ const Team: React.FC = () => {
                                     <Text className="text-blue-600 text-base font-black ml-2">Share Code</Text>
                                 </View>
                             </TouchableOpacity>
-                            <TouchableOpacity
-                                className="bg-white/20 rounded-2xl px-6 py-4"
-                                activeOpacity={0.8}
-                                onPress={() => {
-                                    showToast.success(
-                                        `Share your code with friends. They get ₹250 bonus on first investment, you earn ${tierInfo.rate} of their returns!`,
-                                        'How it works'
-                                    );
-                                }}
-                            >
-                                <View className="flex-row items-center justify-center">
-                                    <FeatherIcon name="info" size={20} color="white" />
-                                    <Text className="text-white text-base font-bold ml-2">How it works</Text>
-                                </View>
-                            </TouchableOpacity>
+                   
                         </View>
                     </View>
 
@@ -405,7 +391,7 @@ const Team: React.FC = () => {
                                             </Text>
                                             <View className="flex-row items-center">
                                                 <Text className="text-gray-500 text-xs mr-3">
-                                                    Earned: ₹{member.totalEarnings}
+                                                    Earned: ₹{member.totalEarnings.toFixed(2)}
                                                 </Text>
                                                
                                             </View>

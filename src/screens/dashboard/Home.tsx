@@ -186,7 +186,7 @@ const Home: React.FC = () => {
       // Mock deposit API call - replace with actual API
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      showToast.success(`₹${parseFloat(depositAmount).toLocaleString()} deposited successfully!`, 'Success');
+      showToast.success(`₹${parseFloat(depositAmount).toFixed(2).toLocaleString()} deposited successfully!`, 'Success');
       setDepositModalVisible(false);
       setDepositAmount('');
       loadPortfolioStats(); // Refresh data
@@ -360,7 +360,7 @@ const Home: React.FC = () => {
               </View>
             </View>
             <Text className="text-gray-900 text-4xl font-black mb-6">
-              ₹{portfolioStats.balance.toLocaleString()}
+              ₹{portfolioStats.balance.toFixed(2).toLocaleString()}
             </Text>
             <View className="flex-row space-x-4">
               <TouchableOpacity
@@ -399,14 +399,14 @@ const Home: React.FC = () => {
             <View className="flex-1 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
               <Text className="text-gray-500 text-sm  font-medium">Total Invested</Text>
               <Text className="text-gray-900 text-xl font-black">
-                ₹{portfolioStats.totalInvested.toLocaleString()}
+                ₹{portfolioStats.totalInvested.toFixed(2).toLocaleString()}
               </Text>
             </View>
             <View className="flex-1 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
               <Text className="text-gray-500 text-sm font-medium">Total Returns</Text>
               <Text className={`text-xl font-black ${portfolioStats.totalReturns >= 0 ? 'text-green-600' : 'text-red-600'
                 }`}>
-                {portfolioStats.totalReturns >= 0 ? '+' : ''}₹{Math.abs(portfolioStats.totalReturns).toLocaleString()}
+                {portfolioStats.totalReturns >= 0 ? '+' : ''}₹{Math.abs(portfolioStats.totalReturns).toFixed(2).toLocaleString()}
               </Text>
             </View>
             <View className="flex-1 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
@@ -497,7 +497,7 @@ const Home: React.FC = () => {
                   <View>
                     <Text className="text-gray-500 text-sm">Investment</Text>
                     <Text className="text-gray-900 text-lg font-black">
-                      ₹{investment.amount.toLocaleString()}
+                      ₹{investment.amount.toFixed(2).toLocaleString()}
                     </Text>
                   </View>
                   <View className="items-center">
@@ -512,7 +512,7 @@ const Home: React.FC = () => {
                     </Text>
                     <Text className="text-gray-900 text-lg font-black">
                       {investment.status === 'matured'
-                        ? `+₹${investment.totalReturns.toLocaleString()}`
+                        ? `+₹${investment.totalReturns.toFixed(2).toLocaleString()}`
                         : `${investment.daysLeft} days`
                       }
                     </Text>
@@ -547,7 +547,7 @@ const Home: React.FC = () => {
               <View className="bg-gray-50 rounded-2xl p-4 mb-4">
                 <View className="flex-row justify-between">
                   <Text className="text-gray-600">Current Balance</Text>
-                  <Text className="text-gray-900 font-bold">₹{portfolioStats.balance.toLocaleString()}</Text>
+                  <Text className="text-gray-900 font-bold">₹{portfolioStats.balance.toFixed(2).toLocaleString()}</Text>
                 </View>
               </View>
 
@@ -603,7 +603,7 @@ const Home: React.FC = () => {
               <View className="bg-gray-50 rounded-2xl p-4 mb-4">
                 <View className="flex-row justify-between">
                   <Text className="text-gray-600">Available Balance</Text>
-                  <Text className="text-green-600 font-bold">₹{portfolioStats.balance.toLocaleString()}</Text>
+                  <Text className="text-green-600 font-bold">₹{portfolioStats.balance.toFixed(2).toLocaleString()}</Text>
                 </View>
               </View>
 
