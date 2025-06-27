@@ -251,8 +251,8 @@ const Team: React.FC = () => {
                                     <FeatherIcon name="gift" size={24} color="#8b5cf6" />
                                 </View>
                                 <Text className="text-2xl font-black text-gray-900">
-                                    ₹{dashboardData?.totalEarnings || 0}
-                                </Text>
+  ₹{(dashboardData?.totalEarnings || 0).toFixed(2)}
+</Text>
                             </View>
                             <Text className="text-gray-600 text-sm font-medium">Total Earnings</Text>
                             <Text className="text-purple-600 text-xs font-bold mt-1">Lifetime rewards</Text>
@@ -264,7 +264,7 @@ const Team: React.FC = () => {
                                     <FeatherIcon name="trending-up" size={24} color="#f97316" />
                                 </View>
                                 <Text className="text-2xl font-black text-gray-900">
-                                    ₹{dashboardData?.monthlyEarnings || 0}
+                                    ₹{(dashboardData?.monthlyEarnings || 0).toFixed(2)}
                                 </Text>
                             </View>
                             <Text className="text-gray-600 text-sm font-medium">This Month</Text>
@@ -298,7 +298,7 @@ const Team: React.FC = () => {
                                 <View>
                                     <Text className="text-white/80 text-sm">Referral Balance</Text>
                                     <Text className="text-white text-2xl font-black">
-                                        ₹{dashboardData?.referralBalance || 0}
+                                        ₹{(dashboardData?.referralBalance || 0).toFixed(2)}
                                     </Text>
                                 </View>
                                 {(dashboardData?.referralBalance || 0) > 0 && (
@@ -407,11 +407,7 @@ const Team: React.FC = () => {
                                                 <Text className="text-gray-500 text-xs mr-3">
                                                     Earned: ₹{member.totalEarnings}
                                                 </Text>
-                                                <View className="px-3 py-1 bg-green-50 rounded-xl">
-                                                    <Text className="text-green-600 font-black text-xs">
-                                                        +₹{member.monthlyEarnings}
-                                                    </Text>
-                                                </View>
+                                               
                                             </View>
                                         </View>
                                         {member.status === 'pending' && (
