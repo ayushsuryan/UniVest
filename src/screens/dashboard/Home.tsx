@@ -456,7 +456,7 @@ const Home: React.FC = () => {
 
           <View className="space-y-4">
             {recentInvestments.map((investment) => (
-              <View key={investment.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+              <View key={investment.id} className="bg-white my-2 rounded-2xl p-4 shadow-sm border border-gray-100">
                 <View className="flex-row items-center justify-between mb-3">
                   <View className="flex-row items-center flex-1">
                     <View
