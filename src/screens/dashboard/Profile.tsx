@@ -1,8 +1,9 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {View, Text, ScrollView, TouchableOpacity, Switch} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import Wallet from '../../Components/Wallet';
+import InvestmentService from '../../connections/investments';
 import { useAuth } from '../../context/AuthContext';
 import { showToast } from '../../utils/toast';
 
@@ -11,18 +12,61 @@ const Profile: React.FC = () => {
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [marketAlertsEnabled, setMarketAlertsEnabled] = useState(true);
   const [showWallet, setShowWallet] = useState(false);
+  const [userStats, setUserStats] = useState({
+    totalInvested: 0,
+    totalReturns: 0,
+    activeInvestments: 0,
+    totalInvestments: 0,
+    tradingDays: 0,
+    successRate: 0,
+    portfolioGrowth: 0,
+  });
 
   // Get user data and logout function from AuthContext
-  const { user, logout, isLoading } = useAuth();
+  const { user, logout, isLoading, refreshUserData } = useAuth();
 
-  const userStats = {
-    totalInvested: 150000,
-    totalReturns: 37500,
-    activeInvestments: 5,
-    tradingDays: 45,
-    successRate: 85,
-    portfolioGrowth: 25.0,
-  };
+  // Fetch portfolio statistics on component mount
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const result = await InvestmentService.getPortfolioStats();
+        if (result.success && result.data) {
+          const {
+            totalInvested = 0,
+            totalReturns = 0,
+            activeInvestments = 0,
+            totalInvestments = 0,
+          } = result.data;
+
+          const portfolioGrowth =
+            totalInvested > 0 ? (totalReturns / totalInvested) * 100 : 0;
+          const successRate =
+            totalInvestments > 0
+              ? (activeInvestments / totalInvestments) * 100
+              : 0;
+
+          setUserStats({
+            totalInvested,
+            totalReturns,
+            activeInvestments,
+            totalInvestments,
+            tradingDays: 0, // Placeholder – not provided by backend
+            successRate: Number(successRate.toFixed(2)),
+            portfolioGrowth: Number(portfolioGrowth.toFixed(2)),
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch portfolio stats:', error);
+      }
+    };
+
+    fetchStats();
+
+    // Refresh user details in context (balance, etc.)
+    if (refreshUserData) {
+      refreshUserData();
+    }
+  }, []);
 
   const handleLogout = () => {
     showToast.warning('Tap to confirm logout from your account.', 'Confirm Logout');
@@ -68,38 +112,6 @@ const Profile: React.FC = () => {
       icon: 'clock',
       color: '#059669',
       onPress: () => console.log('Trading History'),
-    },
-    {
-      id: '4',
-      title: 'Investment Analytics',
-      subtitle: 'Detailed performance reports',
-      icon: 'bar-chart-2',
-      color: '#0891b2',
-      onPress: () => console.log('Investment Analytics'),
-    },
-    {
-      id: '5',
-      title: 'Tax Documents',
-      subtitle: 'Download trading statements',
-      icon: 'file-text',
-      color: '#ea580c',
-      onPress: () => console.log('Tax Documents'),
-    },
-    {
-      id: '6',
-      title: 'Security Settings',
-      subtitle: 'Manage account security',
-      icon: 'shield',
-      color: '#dc2626',
-      onPress: () => console.log('Security Settings'),
-    },
-    {
-      id: '7',
-      title: 'Help & Support',
-      subtitle: 'Get help with commodity trading',
-      icon: 'help-circle',
-      color: '#059669',
-      onPress: () => console.log('Help & Support'),
     },
   ];
 
